@@ -1,0 +1,969 @@
+<title>Трекер на выключенной платформе</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+  :root {
+    --ground: #EDF0F3;
+    --surface: #FFFFFF;
+    --surface-2: #F4F7F9;
+    --ink: #14181D;
+    --ink-2: #454E59;
+    --ink-3: #6C7681;
+    --line: #D7DDE3;
+    --line-2: #BAC3CC;
+    --signal: #B03A22;
+    --signal-soft: #F7E8E3;
+    --data: #2B5A86;
+    --data-soft: #E3EDF5;
+    --go: #1E6A4C;
+    --go-soft: #E0EFE8;
+    --warn: #8E6108;
+    --warn-soft: #F6EEDC;
+
+    --f-display: "PT Serif", Georgia, "Times New Roman", serif;
+    --f-body: "Golos Text", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1317;
+      --surface: #161B21;
+      --surface-2: #1B222A;
+      --ink: #E7ECF1;
+      --ink-2: #AFB9C4;
+      --ink-3: #808B98;
+      --line: #262F38;
+      --line-2: #3A4550;
+      --signal: #E4795F;
+      --signal-soft: #2E1D18;
+      --data: #83AED7;
+      --data-soft: #16222D;
+      --go: #5FB893;
+      --go-soft: #122720;
+      --warn: #D6A44A;
+      --warn-soft: #251E10;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0F1317;
+    --surface: #161B21;
+    --surface-2: #1B222A;
+    --ink: #E7ECF1;
+    --ink-2: #AFB9C4;
+    --ink-3: #808B98;
+    --line: #262F38;
+    --line-2: #3A4550;
+    --signal: #E4795F;
+    --signal-soft: #2E1D18;
+    --data: #83AED7;
+    --data-soft: #16222D;
+    --go: #5FB893;
+    --go-soft: #122720;
+    --warn: #D6A44A;
+    --warn-soft: #251E10;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .doc {
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(20px, 1fr)
+      [wide-start] minmax(0, 160px)
+      [content-start] minmax(0, 720px) [content-end]
+      minmax(0, 160px) [wide-end]
+      minmax(20px, 1fr) [full-end];
+    row-gap: 0;
+    padding: 0 0 96px;
+  }
+  .doc > * { grid-column: content; }
+  .doc > .wide { grid-column: wide; }
+
+  /* ---------- type ---------- */
+  h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+  h1 {
+    font-size: clamp(2.1rem, 5.4vw, 3.35rem);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    margin: 10px 0 18px;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.2vw, 1.95rem);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    margin: 8px 0 14px;
+  }
+  h3 {
+    font-family: var(--f-body);
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    margin: 26px 0 8px;
+  }
+  p { margin: 0 0 16px; }
+  a { color: var(--data); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--data);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  .kicker {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+  .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+  section { margin-top: 58px; }
+  section > p, section > ul, section > ol, section > .note, section > .callout { max-width: 68ch; }
+
+  ul, ol { margin: 0 0 16px; padding-left: 1.15em; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--ink-3); }
+
+  /* ---------- header ---------- */
+  header.masthead {
+    padding: 68px 0 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--signal);
+    background: var(--signal-soft);
+    border: 1px solid color-mix(in srgb, var(--signal) 26%, transparent);
+    padding: 5px 11px;
+    border-radius: 2px;
+  }
+  .dek {
+    font-size: 1.16rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 60ch;
+    margin-bottom: 26px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 26px;
+    font-family: var(--f-mono);
+    font-size: 0.76rem;
+    color: var(--ink-3);
+    padding-bottom: 26px;
+  }
+  .meta span { white-space: nowrap; }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 34px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .verdict > div { background: var(--surface); padding: 22px 22px 24px; }
+  .verdict .label {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .verdict .v-no .label { color: var(--signal); }
+  .verdict .v-mid .label { color: var(--warn); }
+  .verdict .v-go .label { color: var(--go); }
+  .verdict p { font-size: 0.97rem; line-height: 1.5; margin: 0; color: var(--ink-2); }
+  .verdict p strong { color: var(--ink); }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    border-left: 3px solid var(--data);
+    background: var(--surface);
+    padding: 18px 20px;
+    margin: 24px 0;
+    border-radius: 0 3px 3px 0;
+  }
+  .callout.risk { border-left-color: var(--signal); }
+  .callout.good { border-left-color: var(--go); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: block;
+    margin-bottom: 7px;
+  }
+
+  .note {
+    font-size: 0.88rem;
+    color: var(--ink-3);
+    line-height: 1.5;
+  }
+
+  /* ---------- tables ---------- */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 22px 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  caption {
+    caption-side: top;
+    text-align: left;
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 14px 16px 0;
+  }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line-2);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody th { font-weight: 600; font-size: 0.92rem; }
+  tr.total td, tr.total th { background: var(--surface-2); font-weight: 600; }
+  .tag {
+    display: inline-block;
+    font-family: var(--f-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .tag.red { color: var(--signal); background: var(--signal-soft); }
+  .tag.green { color: var(--go); background: var(--go-soft); }
+  .tag.blue { color: var(--data); background: var(--data-soft); }
+  .tag.amber { color: var(--warn); background: var(--warn-soft); }
+
+  /* ---------- timeline ---------- */
+  .timeline { margin: 28px 0 8px; }
+  .tl-row {
+    display: grid;
+    grid-template-columns: 118px 22px 1fr;
+    column-gap: 0;
+    align-items: start;
+  }
+  .tl-date {
+    font-family: var(--f-mono);
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    text-align: right;
+    padding: 12px 16px 12px 0;
+    white-space: nowrap;
+  }
+  .tl-rail { position: relative; }
+  .tl-rail::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line-2);
+    transform: translateX(-50%);
+  }
+  .tl-row:first-child .tl-rail::before { top: 18px; }
+  .tl-row:last-child .tl-rail::before { bottom: auto; height: 18px; }
+  .tl-dot {
+    position: absolute;
+    left: 50%;
+    top: 17px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--line-2);
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 4px var(--ground);
+  }
+  .tl-body { padding: 10px 0 14px 20px; }
+  .tl-body p { margin: 0; font-size: 0.94rem; line-height: 1.5; color: var(--ink-2); }
+  .tl-body b { color: var(--ink); font-weight: 600; }
+  .tl-row.is-now .tl-dot { background: var(--data); box-shadow: 0 0 0 4px var(--ground), 0 0 0 6px color-mix(in srgb, var(--data) 35%, transparent); }
+  .tl-row.is-now .tl-date { color: var(--data); font-weight: 700; }
+  .tl-row.is-cliff .tl-dot { background: var(--signal); box-shadow: 0 0 0 4px var(--ground), 0 0 0 6px color-mix(in srgb, var(--signal) 35%, transparent); }
+  .tl-row.is-cliff .tl-date { color: var(--signal); font-weight: 700; }
+  .tl-row.is-cliff .tl-body { background: var(--signal-soft); border-radius: 3px; padding-left: 16px; padding-right: 16px; margin-left: 4px; }
+
+  @media (max-width: 620px) {
+    .tl-row { grid-template-columns: 16px 1fr; }
+    .tl-date { grid-column: 1 / -1; text-align: left; padding: 14px 0 0 26px; }
+    .tl-rail { grid-column: 1; }
+    .tl-body { grid-column: 2; padding-left: 12px; }
+    .tl-dot { top: 8px; }
+  }
+
+  /* ---------- figure blocks ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    margin: 26px 0;
+    overflow: hidden;
+  }
+  .stat { background: var(--surface); padding: 18px 18px 20px; }
+  .stat .v {
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    display: block;
+    line-height: 1.1;
+  }
+  .stat .k { font-size: 0.82rem; color: var(--ink-3); line-height: 1.4; display: block; margin-top: 7px; }
+  .stat.red .v { color: var(--signal); }
+  .stat.blue .v { color: var(--data); }
+  .stat.green .v { color: var(--go); }
+
+  .bar-cell { display: flex; align-items: center; gap: 9px; }
+  .bar { height: 7px; border-radius: 1px; background: var(--data); min-width: 2px; }
+  .bar.red { background: var(--signal); }
+  .bar.green { background: var(--go); }
+
+  /* ---------- message card ---------- */
+  .message {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 26px 28px;
+    margin: 24px 0;
+  }
+  .message p { margin: 0 0 13px; font-size: 0.98rem; }
+  .message p:last-child { margin-bottom: 0; }
+
+  details {
+    border-top: 1px solid var(--line);
+    padding: 14px 0;
+  }
+  summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+  details[open] summary { margin-bottom: 10px; }
+
+  footer.sources {
+    margin-top: 64px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+    color: var(--ink-3);
+  }
+  footer.sources ul { columns: 2; column-gap: 34px; padding-left: 1.1em; }
+  footer.sources li { break-inside: avoid; margin-bottom: 6px; }
+  @media (max-width: 620px) { footer.sources ul { columns: 1; } }
+
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 54px 0 0; }
+</style>
+
+<div class="doc">
+
+  <header class="masthead">
+    <p class="eyebrow">Разбор предложения · сентябрь 2026</p>
+    <h1>Трекер на выключенной платформе</h1>
+    <p class="dek">Друг предлагает вдвоём сделать SaaS-аналог «Откуда подписки» (tgtrack.ru): он&nbsp;— маркетинг, вы&nbsp;— разработка. Ниже: что там на самом деле с рынком, конкурентами, регулированием, вложениями и окупаемостью, и на каких условиях в это стоит заходить.</p>
+    <div class="meta">
+      <span>Вопрос: заходить или нет</span>
+      <span>Объект: tgtrack.ru + @tgTrack_bot</span>
+      <span>Данные на 02.09.2026</span>
+    </div>
+  </header>
+
+  <div class="verdict">
+    <div class="v-no">
+      <p class="label">Как предложено — нет</p>
+      <p>Клон TGTrack под Telegram — это стройка на площадке, которую в России выключают. Telegram замедлен с февраля, реклама <em>в</em> нём становится незаконной <strong>с 1 января 2027</strong>. Ваши первые платящие клиенты появятся ровно в тот месяц, когда их главный канал закупки станет штрафуемым.</p>
+    </div>
+    <div class="v-mid">
+      <p class="label">Что менять</p>
+      <p>Продукт тот же, площадка другая: <strong>атрибуция подписок в MAX</strong> (Директ / VK Ads / посевы → канал → офлайн-конверсии). MAX с июня 2026&nbsp;— №1 по месячному охвату, рекламный инструментарий там появился в мае, аналитики почти нет. Telegram&nbsp;— как бонусный модуль на остаток его жизни, не как фундамент.</p>
+    </div>
+    <div class="v-go">
+      <p class="label">На каких условиях</p>
+      <p>Сначала <strong>14 дней теста спроса без кода</strong>. Потом&nbsp;— юрлицо на двоих, вклад считаем в деньгах, KPI-ворота обеим сторонам. «С тебя разраб, с меня маркетинг» пополам и деньги через его ИП&nbsp;— не подписывать.</p>
+    </div>
+  </div>
+
+  <section>
+    <p class="kicker">Факт, который меняет всю картину</p>
+    <h2>Площадку выключают прямо сейчас</h2>
+    <p>Разбор, который вы получили от ChatGPT, опирается на данные 2025 года и рисует растущий рынок Telegram-рекламы на 40 млрд ₽. За 2026 год картина перевернулась. Это не деталь и не «риск в конце списка» — это главный входной параметр решения.</p>
+
+    <div class="wide timeline">
+      <div class="tl-row">
+        <div class="tl-date">авг 2025</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>РКН ограничивает <b>звонки</b> в Telegram и WhatsApp — первый шаг.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">01.09.2025</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>Вступает в силу 72-ФЗ: <b>запрет размещать рекламу на ресурсах с ограниченным доступом</b> (ч. 10.7 ст. 5 закона «О рекламе»).</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">10.02.2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>Официально подтверждено <b>замедление Telegram по всей стране</b>: медиа, голосовые, картинки почти не грузятся.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">10.03.2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p><b>ФАС</b>: в размещении рекламы в Telegram и YouTube есть признаки нарушения закона. 16 марта — штраф мессенджеру 35 млн ₽.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">25.03.2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>ФАС объявляет <b>переходный период до 31.12.2026</b>: штрафов за саму рекламу пока не будет. Рынок получает отсрочку — и дедлайн.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">апр 2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>Уровень блокировки доходит до <b>~95% аномалий</b> по данным сетевого мониторинга. Telegram практически недоступен без обходных средств.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">май 2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>В Яндекс Директе появляется <b>формат рекламы в MAX</b>: подбор каналов в РСЯ и ручной выбор из каталога.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">июнь 2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>Mediascope: <b>MAX впервые обгоняет Telegram</b> по месячному охвату — 86,2 млн против 75,7 млн. Telegram теряет по 5–6 млн человек в месяц.</p></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-date">июнь–июль 2026</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p>Заочное обвинение и международный розыск основателя Telegram; 30 июля — включение в перечень Росфинмониторинга. На столе сценарий «признание платформы экстремистской» и сценарий полного запрета.</p></div>
+      </div>
+      <div class="tl-row is-now">
+        <div class="tl-date">сейчас</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p><b>Сентябрь 2026.</b> Вы решаете, начинать ли 2–3-месячную разработку.</p></div>
+      </div>
+      <div class="tl-row is-cliff">
+        <div class="tl-date">01.01.2027</div>
+        <div class="tl-rail"><span class="tl-dot"></span></div>
+        <div class="tl-body"><p><b>Конец переходного периода.</b> Реклама в Telegram — незаконна. Штрафы по ст. 14.3 КоАП: самозанятые до 2 500 ₽, ИП 4 000–20 000 ₽, юрлица 100 000–500 000 ₽. Ответственность — на всей цепочке: рекламодатель, агентство, владелец канала.</p></div>
+      </div>
+    </div>
+
+    <h3>Что именно запрещается — и что остаётся</h3>
+    <p>Важная деталь, которую нельзя путать. Под запрет с 2027 года попадает реклама <em>внутри</em> Telegram: посевы у блогеров, взаимопиар, Telegram Ads, посты со скидками и призывами к покупке в собственном канале. Реклама <em>снаружи</em>, ведущая на канал (Яндекс Директ → Telegram-канал) — сегодня разрешена, и ФАС отдельно проговаривала, что давать ссылку на канал с других ресурсов можно.</p>
+    <p>То есть формально ровно тот сценарий, под который заточен TGTrack — «льём из Директа в телегу» — юридически пока жив. Но он умирает физически: клик по объявлению ведёт в мессенджер, который у пользователя без VPN не открывается. Отсюда и цифра РКН: объём зарегистрированной рекламы в Telegram за первое полугодие 2026 — 7,9 млрд ₽, <span class="num">−22%</span> год к году. И интерес к Telegram Ads: начать в 2026 планировал лишь 21% рекламодателей, на треть меньше, чем годом раньше.</p>
+
+    <div class="callout risk">
+      <span class="label">Что это значит для бизнес-плана</span>
+      <p>Продукт продаётся людям, которые <em>платят за трафик в Telegram-канал</em>. Эта популяция в России сокращается каждый месяц и с 1 января получает юридический риск. Вы будете запускать платные тарифы примерно в декабре 2026 — в месяц, когда ваша целевая аудитория будет занята не оптимизацией CPS, а переездом.</p>
+    </div>
+
+    <div class="callout">
+      <span class="label">Контраргумент, который честно надо держать в голове</span>
+      <p>Аудитория не испарилась: по заявлению Дурова, ~65 млн россиян продолжают пользоваться Telegram ежедневно через VPN. Каналы живы, деньги в них крутятся, и часть рынка будет работать в серой зоне и после 2027 года — как это произошло с Instagram*. Но серый рынок — это рынок, где юрлица не платят по счёту 1 990 ₽/мес белому SaaS с офертой и чеками. Это принципиально другой профиль клиента и другой чек.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Объект копирования</p>
+    <h2>Что такое TGTrack на самом деле</h2>
+    <p>Я разобрал сайт, документацию и карточку бота. Продукт устроен просто и умно.</p>
+
+    <h3>Механика</h3>
+    <ol>
+      <li>Бот добавляется админом в канал — без особых прав.</li>
+      <li>В боте создаётся пригласительная ссылка с параметрами: посадочный пост, метка креатива, UTM.</li>
+      <li>Трафик из рекламной системы льётся на эту ссылку; бот незаметно фиксирует клик и его параметры.</li>
+      <li>Когда человек подписывается, алгоритм сопоставляет подписку с кликом — заявленная точность &gt;95% при потоке <strong>до 50 подписок в день</strong> на канал.</li>
+      <li>Подписка уходит офлайн-конверсией в Яндекс Директ / VK / Meta* / Google — алгоритм обучается на подписчиках, а не на кликах.</li>
+      <li>Сверху: ежедневный отчёт, выгрузка в Excel/Google Docs, отписки, возраст подписчиков, отдельный бот выдачи лид-магнитов с проверкой подписки.</li>
+    </ol>
+    <p class="note">Ограничение «до 50 подписок в день» — это и есть подпись под технологией: атрибуция вероятностная, по временному окну между кликом и вступлением. При плотном потоке окна пересекаются и точность падает. Это не недостаток реализации, это природа задачи.</p>
+
+    <h3>Тарифы и масштаб</h3>
+    <div class="stats">
+      <div class="stat"><span class="v">1 990 ₽</span><span class="k">PRO помесячно; 1 490 ₽/мес при оплате за год. Есть постоянный бесплатный тариф.</span></div>
+      <div class="stat blue"><span class="v">10 008</span><span class="k">пользователей бота @tgTrack_bot по каталогу на 01.09.2026 — это стартовавшие за всё время, не платящие</span></div>
+      <div class="stat"><span class="v">8,6K</span><span class="k">подписчиков в канале основателя @sales_smb — весь маркетинговый актив проекта</span></div>
+      <div class="stat"><span class="v">1</span><span class="k">человек: ИП Варламова О. И., Реутов. Не команда, не ООО, не инвестраунд</span></div>
+    </div>
+    <p>С марта 2026 у них есть и бот в MAX — тот же продукт, перенесённый на новую площадку. Это, кстати, лучший из доступных сигналов: единственный игрок, который знает эту нишу изнутри, уже переезжает.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Проверка арифметики</p>
+    <h2>«1 000 платных × 1 500 ₽ = 1,5 млн в месяц»</h2>
+    <p>В этой цепочке ошибка в каждом звене.</p>
+    <div class="table-wrap">
+      <table>
+        <caption>Деконструкция оценки выручки TGTrack</caption>
+        <thead>
+          <tr><th>Звено</th><th>В предложении</th><th>Как есть</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>«10 тыс. юзеров»</strong></td>
+            <td>10 000 пользователей сервиса</td>
+            <td>10 008 — счётчик <em>стартов бота за всё время</em> из внешнего каталога. Сюда входят все, кто нажал «старт» и ушёл, конкуренты, тестировщики, повторные аккаунты.</td>
+          </tr>
+          <tr>
+            <td><strong>«платных даже если 1000»</strong></td>
+            <td>10% конверсия в платный</td>
+            <td>У сервиса щедрый бесплатный тариф — он и создан, чтобы удерживать основную массу. Типичная конверсия free→paid у SMB-инструментов такого класса — 3–8% от <em>активных</em>, а не от всех стартовавших. Реалистично: <strong>200–600 платящих</strong>.</td>
+          </tr>
+          <tr>
+            <td><strong>«1 500 ₽ × 12»</strong></td>
+            <td>полная цена весь год</td>
+            <td>Годовая оплата идёт со скидкой 25%, часть клиентов сидит на паузе между рекламными кампаниями, часть отваливается. Эффективный ARPU ниже прайса.</td>
+          </tr>
+          <tr class="total">
+            <td>Итог</td>
+            <td class="n">1 500 000 ₽/мес</td>
+            <td>Реалистичная оценка выручки лидера ниши: <strong>300 000 – 900 000 ₽/мес</strong>, и это <em>потолок</em> категории, а не средний игрок.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Отдельный трезвящий факт: лидер ниши — один человек с ИП в Реутове и каналом на 8,6 тыс. подписчиков. Если бы здесь лежали лёгкие 18 млн ₽ в год, ниша выглядела бы иначе.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Конкуренция</p>
+    <h2>«Конкурентов нет, 1 игрок» — уже неверно</h2>
+    <p>Не один игрок, а как минимум шесть, и цена уже съехала к нулю.</p>
+    <div class="wide table-wrap">
+      <table>
+        <caption>Прямые конкуренты, сентябрь 2026</caption>
+        <thead>
+          <tr><th>Сервис</th><th>Площадки</th><th class="n">Цена</th><th>Чем опасен</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>TGTrack<br><span class="note">tgtrack.ru</span></th>
+            <td>Telegram, MAX</td>
+            <td class="n">0 / 1 490–1 990</td>
+            <td>Лидер ниши, документация ранжируется в поиске, живое сообщество. Один человек — медленный, но и терять ему нечего.</td>
+          </tr>
+          <tr>
+            <th>Botman Радар</th>
+            <td>Telegram, VK, MAX</td>
+            <td class="n">0 / от 700</td>
+            <td><span class="tag red">ценовой демпинг</span> Вся аналитика бесплатно и без лимитов; платите только за отправку конверсий. Многоуровневая атрибуция (invite-links + Mini App + временное окно), интеграции с Директом, Meta*, VK, Google, Метрикой, GA4. Это ваш продукт целиком, уже сделанный и раздаваемый даром.</td>
+          </tr>
+          <tr>
+            <th>Botica</th>
+            <td>Telegram, MAX</td>
+            <td class="n">0 / 4 тарифа</td>
+            <td><span class="tag amber">официальный партнёр MAX</span> ООО, 2000+ каналов, интеграции с Bitrix24, amoCRM, eLama, Метрикой. Занимает ровно ту нишу, в которую вы собираетесь переезжать.</td>
+          </tr>
+          <tr>
+            <th>Maxiflow</th>
+            <td>Telegram + Директ</td>
+            <td class="n">1 990 / 4 990 / 14 900</td>
+            <td>Позиционирование не «аналитика», а «Директ → подписчики → продажи»: yclid, campaign_id, офлайн-конверсии, лид-магниты, воронки. Продают результат, а не отчёт.</td>
+          </tr>
+          <tr>
+            <th>gotg.me</th>
+            <td>Telegram</td>
+            <td class="n">0 / 999</td>
+            <td>Дешёвый, простой, Mini App вместо бота, Метрика. Задаёт нижнюю планку цены для владельца одного канала.</td>
+          </tr>
+          <tr>
+            <th>Mobzio</th>
+            <td>Telegram, MAX, VK</td>
+            <td class="n">триал 3 дня</td>
+            <td>Диплинки + сценарии бота; уже пишет обучающий контент про атрибуцию в MAX — то есть уже занимает поисковую выдачу вашей будущей темы.</td>
+          </tr>
+          <tr>
+            <th>Конструкторы ботов<br><span class="note">Salebot, BotHelp, Botmother, Graspil</span></th>
+            <td>все</td>
+            <td class="n">в составе тарифа</td>
+            <td>Атрибуция для них — фича, а не бизнес. Им достаточно сделать её «на четвёрку» и включить в существующий тариф, чтобы отобрать у вас повод платить отдельно.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout risk">
+      <span class="label">Вывод</span>
+      <p>Вход шестым игроком в нишу, где двое ключевых уже раздают базовую функциональность бесплатно, означает конкуренцию не продуктом, а дистрибуцией и ценой. Копия TGTrack без принципиального отличия обречена продаваться за 700–999 ₽, а на этом чеке экономика не сходится.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Спрос</p>
+    <h2>Сколько здесь вообще денег</h2>
+    <p>Считаю снизу вверх, потому что «рынок Telegram-рекламы 40 млрд» к вашей выручке отношения не имеет: вы продаёте не рекламу, а инструмент её измерения. Платить будет только тот, кто (а) регулярно закупает трафик в канал, (б) закупает достаточно, чтобы 1 500 ₽/мес были незаметны, и (в) умеет читать отчёт.</p>
+    <div class="table-wrap">
+      <table>
+        <caption>Оценка ниши — модель, не измерение</caption>
+        <thead><tr><th>Сегмент</th><th class="n">Оценка</th><th>Как получено</th></tr></thead>
+        <tbody>
+          <tr><td>Все платящие клиенты категории сегодня (все 6 игроков вместе)</td><td class="n">1,5–4 тыс.</td><td>от базы лидера (200–600) × доля рынка ~20–35%, сверху конструкторы</td></tr>
+          <tr><td>Выручка всей категории</td><td class="n">2,5–6 млн ₽/мес</td><td>при среднем чеке 1,2–1,5 тыс. ₽ с учётом бесплатных тарифов</td></tr>
+          <tr><td>Годовой объём ниши</td><td class="n">30–70 млн ₽</td><td>вся ниша, а не ваша доля</td></tr>
+          <tr class="total"><td>Реалистичная доля новичка через 12 месяцев</td><td class="n">5–12%</td><td><strong>150–500 тыс. ₽/мес</strong> при удачном сценарии</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Сегмент MAX сегодня почти пустой в деньгах, но он единственный, у которого тренд вверх: реклама в MAX появилась в Директе в мае 2026, подписчик стоит 50–70 ₽ с посевов, 50–90 ₽ с VK Ads, 60–120 ₽ с Директа, каналы открыли всем в феврале, и рекламодатели туда идут быстрее, чем растёт число каналов. Если рекламный рынок MAX за 2027 год выйдет хотя бы на 5–10 млрд ₽, аналитический слой поверх него — это 15–70 млн ₽/год. Тот же порядок, что и умирающая Telegram-ниша, но с обратным знаком производной.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Вложения</p>
+    <h2>Что стоит вход</h2>
+    <h3>Ваша часть — часы</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Оценка MVP: MAX + Telegram, честно по модулям</caption>
+        <thead><tr><th>Модуль</th><th class="n">Часы</th><th>Комментарий</th></tr></thead>
+        <tbody>
+          <tr><td>Каркас: инфраструктура, БД, деплой, очереди, мониторинг</td><td class="n">40–60</td><td>сервер в РФ обязателен — 152-ФЗ</td></tr>
+          <tr><td>Редирект-трекер: клики, гео, антибот, дедупликация</td><td class="n">25–35</td><td></td></tr>
+          <tr><td><strong>Движок атрибуции</strong>: сопоставление клика и вступления, временные окна, склейка, edge-кейсы</td><td class="n">60–90</td><td>здесь весь продукт и вся боль</td></tr>
+          <tr><td>Агент Telegram: chat_member, invite-ссылки, лимиты API</td><td class="n">30–40</td><td></td></tr>
+          <tr><td>Агент MAX: webhook, user_added / user_removed, вероятностная атрибуция</td><td class="n">35–50</td><td>сложнее Telegram, см. ниже</td></tr>
+          <tr><td>Интеграции: офлайн-конверсии в Метрику/Директ, VK Ads</td><td class="n">40–60</td><td></td></tr>
+          <tr><td>Кабинет, дашборд, ежедневный отчёт, выгрузки</td><td class="n">50–70</td><td></td></tr>
+          <tr><td>Биллинг: приём оплат, тарифы, чеки 54-ФЗ, промокоды, партнёрка</td><td class="n">30–45</td><td></td></tr>
+          <tr><td>Онбординг, документация, бот поддержки</td><td class="n">20–30</td><td>у TGTrack это половина продаж</td></tr>
+          <tr class="total"><td>Итого</td><td class="n">330–480 ч</td><td>6–10 недель full-time; 3–4 месяца при 20 ч/нед</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>В деньгах по ставке 2 000 ₽/час это <strong>660 000 – 960 000 ₽</strong>. Это не «поддержка проекта», это полноценный вклад, сопоставимый со взносом деньгами — и именно так его надо записывать в договорённостях.</p>
+
+    <h3>Кэш — первые 6 месяцев</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Статья</th><th class="n">₽</th></tr></thead>
+        <tbody>
+          <tr><td>Домен, SSL, сервисы</td><td class="n">5 000</td></tr>
+          <tr><td>Инфраструктура (VPS + БД в РФ), 6 мес</td><td class="n">20 000 – 50 000</td></tr>
+          <tr><td>Эквайринг + облачная касса (54-ФЗ), 6 мес</td><td class="n">15 000 – 25 000</td></tr>
+          <tr><td>Юридическое: оферта, политика ПДн, уведомление в РКН, договор партнёрства</td><td class="n">20 000 – 50 000</td></tr>
+          <tr><td>Лендинг и айдентика</td><td class="n">30 000 – 80 000</td></tr>
+          <tr><td>Маркетинговый тест (посевы, Директ, аутрич)</td><td class="n">150 000 – 300 000</td></tr>
+          <tr class="total"><td>Кэш до выхода на самоокупаемость</td><td class="n">240 000 – 510 000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Отдельно: сервис хранит идентификаторы подписчиков и время их действий — это персональные данные. Нужны уведомление в РКН, локализация БД в России и корректная политика. У TGTrack это оформлено. Пропускать нельзя: штрафы за ПДн сейчас сильно выше, чем за всё остальное в этом списке.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Окупаемость</p>
+    <h2>Три сценария и точка невозврата</h2>
+    <p>Допущения: валовая маржа 85% (эквайринг, инфраструктура), постоянные расходы 25–60 тыс. ₽/мес в зависимости от размера, ваш труд оценён в 800 тыс. ₽, кэш-вложения 300 тыс. ₽, горизонт — 12 месяцев после запуска.</p>
+    <div class="wide table-wrap">
+      <table>
+        <caption>Сценарии на 12-й месяц после запуска</caption>
+        <thead>
+          <tr><th>Сценарий</th><th class="n">Платящих</th><th class="n">ARPU</th><th class="n">Отток/мес</th><th class="n">MRR</th><th class="n">Вклад/мес</th><th>Что окупилось</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag red">Пессимистичный</span></td>
+            <td class="n">60</td><td class="n">1 300</td><td class="n">12%</td><td class="n">78 000</td><td class="n">36 000</td>
+            <td>Ни кэш, ни часы. Проект живёт, но как хобби с зарплатой курьера.</td>
+          </tr>
+          <tr>
+            <td><span class="tag amber">Базовый</span></td>
+            <td class="n">150</td><td class="n">1 500</td><td class="n">9%</td><td class="n">225 000</td><td class="n">151 000</td>
+            <td>Кэш — к 8–9 месяцу. Ваши 800 тыс. ₽ труда — к 14–16 месяцу, то есть в середине 2028 года.</td>
+          </tr>
+          <tr>
+            <td><span class="tag green">Оптимистичный</span></td>
+            <td class="n">400</td><td class="n">1 700</td><td class="n">7%</td><td class="n">680 000</td><td class="n">518 000</td>
+            <td>Всё — к 10–11 месяцу. Дальше это настоящий маленький бизнес.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="stats">
+      <div class="stat green"><span class="v">~31</span><span class="k">платящих — операционная безубыточность (покрытие постоянных расходов)</span></div>
+      <div class="stat blue"><span class="v">14 200 ₽</span><span class="k">LTV в базовом сценарии → потолок CAC при LTV/CAC = 3 составляет <b>4 700 ₽</b></span></div>
+      <div class="stat"><span class="v">~700 тыс. ₽</span><span class="k">маркетингового бюджета нужно, чтобы купить 150 платящих по такому CAC. Это кэш партнёра, а не ваш</span></div>
+      <div class="stat red"><span class="v">18–24 мес</span><span class="k">горизонт полной окупаемости в базовом сценарии — против ~4 месяцев до регуляторного обрыва</span></div>
+    </div>
+    <div class="callout risk">
+      <span class="label">Главный вывод по деньгам</span>
+      <p>Срок окупаемости проекта <strong>в 4–6 раз длиннее</strong>, чем срок жизни рынка, под который его предлагают строить. Это не спор про «хорошая идея или плохая» — это арифметическое несовпадение горизонтов. Любой Telegram-first сценарий здесь ломается не из-за конкурентов, а из-за календаря.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Техника</p>
+    <h2>Где действительно сложно</h2>
+    <p>Друг прав: «с технической частью надо подрочить». Но сложность не в Bot API — она в одном месте.</p>
+    <h3>Атрибуция — это вероятностная задача, а не запрос в базу</h3>
+    <p>Надо связать <em>клик</em> (браузер, UTM, yclid, устройство) и <em>вступление</em> (Telegram/MAX user_id) — между ними нет общего идентификатора. Есть два инструмента: уникальная пригласительная ссылка на клик и сопоставление по временному окну. Первый упирается в лимиты API и не всегда доносится через редиректы, второй ломается при плотном потоке — отсюда и честная оговорка TGTrack про «до 50 подписок в день». Реальная работа — это месяцы обработки edge-кейсов: перешёл и не подписался, вернулся через три дня, подписался с другого устройства, отписался и подписался снова, канал закрытый, ссылка пережила репост, параметры потерялись в редиректе рекламной сети.</p>
+    <h3>MAX сложнее Telegram — и в этом ваш шанс</h3>
+    <ul>
+      <li>В MAX Bot API есть события <span class="num">user_added</span> («добавлен или перешёл по ссылке новый пользователь») и <span class="num">user_removed</span> — то есть подписки и отписки ловятся. Но идентификатора конкретной пригласительной ссылки в событии нет: атрибуция там <strong>обязательно</strong> вероятностная, по окну. Кто первым сделает это точно — получит настоящее преимущество, которое нельзя скопировать за выходные.</li>
+      <li>Вебхук только на 443 и только с CA-сертификатом (плюс сертификат Минцифры в доверенных), long polling — не для продакшена, отключение при недоступности 8 часов. Требования к инфраструктуре жёстче, чем у Telegram.</li>
+      <li>Платформа для разработчиков доступна <strong>только верифицированным ИП и юрлицам — резидентам РФ</strong>, лимит 5 ботов на организацию. Это барьер входа — он же ваша защита от школьника с копией. И он же означает, что аккаунт разработчика будет оформлен на конкретное юрлицо: чьё именно — вопрос не технический, а партнёрский (см. ниже).</li>
+      <li>API живой и ломается: метод <span class="num">GET /chats</span> отключили с июня 2026. Закладывайте регулярную поддержку под изменения платформы.</li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="kicker">Что строить</p>
+    <h2>Продукт, в который я бы заходил</h2>
+    <p>Тот же механизм, другая точка приложения и другой оффер.</p>
+    <div class="callout good">
+      <span class="label">Позиционирование</span>
+      <p><strong>Сквозная аналитика продвижения в MAX.</strong> Показываем, какая реклама привела живого подписчика, сколько он стоил после оттока, и отдаём подписки обратно в Директ и VK Ads, чтобы алгоритм учился на подписчиках, а не на кликах. Telegram — поддерживаем, пока он работает, и помогаем перевезти историю.</p>
+    </div>
+    <h3>Три отличия, за которые платят</h3>
+    <ol>
+      <li><strong>«Живой подписчик», а не подписчик.</strong> Не CPS, а CPS с учётом удержания на 30-й день. Источник, дающий подписчиков по 80 ₽ с оттоком 70%, объективно хуже источника по 150 ₽ с оттоком 25% — и никто из конкурентов это не считает.</li>
+      <li><strong>Мультиплощадочность как переезд.</strong> Один кабинет: Telegram и MAX рядом, сравнение стоимости подписчика между площадками, отчёт «сколько вашей аудитории реально доехало». Осенью 2026 это главная боль каждого владельца канала.</li>
+      <li><strong>Агентский тариф.</strong> Агентство ведёт 20–40 каналов и не хочет 30 отдельных подписок. Один воркспейс, роли, white-label-отчёт клиенту, API. Чек 7 900 – 14 900 ₽ и отток вдвое ниже, чем у частника.</li>
+    </ol>
+    <h3>Тарифная лестница</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Тариф</th><th class="n">Цена</th><th>Для кого и что внутри</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td class="n">0</td><td>1 канал, до 1 000 подписок/мес, источники, отписки, ежедневный отчёт. Это канал привлечения, а не благотворительность.</td></tr>
+          <tr><td>Старт</td><td class="n">990</td><td>3 канала, UTM, удержание, отчёты. Владелец канала.</td></tr>
+          <tr><td>PRO</td><td class="n">2 490</td><td>Офлайн-конверсии в Директ/VK, кампании и креативы, стоимость живого подписчика. Маркетолог.</td></tr>
+          <tr><td>Agency</td><td class="n">7 900 – 14 900</td><td>Воркспейс, клиенты, роли, white-label, API, несколько рекламных кабинетов.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Чего в первой версии не делать</h3>
+    <p>ИИ-ассистент, Mini App, CRM, конструктор воронок, мобильное приложение, сложная система ролей, 20 интеграций. Всё это — после первых 100 платящих.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Маркетинг</p>
+    <h2>Стратегия — с поправкой на то, что половина привычных каналов отваливается</h2>
+    <p>Важный момент, который надо проговорить с другом прямо: его план «вьебать по всем рассылки и инвайт» в Telegram — это ровно тот инструмент, который с 1 января становится незаконным, а уже сейчас упирается в замедление и в выжженные рассылками аудитории. Дистрибуция, которую он приносит в сделку, обесценивается по тому же графику, что и рынок. Каналы ниже отсортированы по тому, сколько они дадут в 2027-м, а не в 2025-м.</p>
+    <div class="wide table-wrap">
+      <table>
+        <caption>Каналы привлечения, приоритет сверху вниз</caption>
+        <thead><tr><th>Канал</th><th class="n">Ожидаемый CAC</th><th>Механика и почему сработает</th></tr></thead>
+        <tbody>
+          <tr>
+            <th>Собственный канал в MAX</th><td class="n">1 000 – 2 500 ₽</td>
+            <td>Медиа про маркетинг в MAX: разборы, цифры, кейсы. Растим посевами по 50–70 ₽ за подписчика — вдвое дешевле Telegram. Одновременно это витрина продукта: все цифры в постах получены собственным сервисом.</td>
+          </tr>
+          <tr>
+            <th>Поиск: Директ + SEO-документация</th><td class="n">1 500 – 3 500 ₽</td>
+            <td>Низкочастотные запросы «как отследить подписчиков в max», «откуда пришли подписчики», «офлайн-конверсии телеграм директ». У TGTrack трафик идёт через doc.tgtrack.ru — документация как SEO-актив. Делаем 30–50 страниц справочника по атрибуции в MAX: сейчас этой выдачи почти нет, через год будет занята.</td>
+          </tr>
+          <tr>
+            <th>Партнёрская программа</th><td class="n">30% recurring</td>
+            <td>Таргетологи и агентства продают сервис клиентам, потому что он делает их работу измеримой. Платим пожизненно с каждого платежа — 597 ₽/мес с клиента на PRO. Это и есть тот самый «раскрутить через блоги и каналы», но с автоматической мотивацией.</td>
+          </tr>
+          <tr>
+            <th>Прямой аутрич к агентствам</th><td class="n">2 000 – 5 000 ₽</td>
+            <td>Тех, кто уже льёт в MAX, видно по рекламе. Оффер: бесплатно подключим и покажем реальную стоимость живого подписчика по последним кампаниям. Один агентский клиент = 20–40 каналов.</td>
+          </tr>
+          <tr>
+            <th>Free-аудит как продукт</th><td class="n">почти 0</td>
+            <td>Подключил канал → через 7 дней отчёт: столько переходов, столько подписок, такой CR, три неэффективных размещения, столько стоил живой подписчик. Дальше кнопка «включить оптимизацию Директа». Product-led рост вместо баннеров.</td>
+          </tr>
+          <tr>
+            <th>Интеграции-рефералы</th><td class="n">бартер</td>
+            <td>Конструкторы ботов и агентства-подрядчики — не только конкуренты, но и канал: встроиться в чужой продукт выгоднее, чем бодаться с ним за то же место.</td>
+          </tr>
+          <tr>
+            <th>Telegram-посевы и рассылки</th><td class="n"><span class="tag red">не строить на этом</span></td>
+            <td>Работает сегодня, незаконно с 2027-го, и аудитория там уже плохо доходит. Использовать как разовый выхлоп, не как систему.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>План на 90 дней с воротами</h3>
+    <div class="wide table-wrap">
+      <table>
+        <thead><tr><th>Этап</th><th>Что делаем</th><th>Ворота — если не выполнено, дальше не идём</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Дни 1–14</strong><br><span class="note">без единой строчки продуктового кода</span></td>
+            <td>Лендинг с оффером и ценой. 30 разговоров с владельцами каналов, таргетологами, агентствами, которые уже льют в MAX. Сбор предоплат за годовой доступ со скидкой 50%.</td>
+            <td><strong>10 предоплат</strong> или 25 писем «беру, когда запустите» с конкретным каналом. Нет — расходимся без потерь.</td>
+          </tr>
+          <tr>
+            <td><strong>Дни 15–56</strong></td>
+            <td>MVP: трекер, атрибуция, MAX-агент, Telegram-агент, отчёт, офлайн-конверсии в Директ, биллинг. Параллельно — 20 страниц документации под поиск.</td>
+            <td>Работающая атрибуция на трёх реальных каналах с точностью, которую вы готовы написать на сайте.</td>
+          </tr>
+          <tr>
+            <td><strong>Дни 57–90</strong></td>
+            <td>Запуск, первые клиенты, ручное сопровождение каждого лично.</td>
+            <td><strong>30 платящих, CAC ≤ 4 500 ₽, отток ≤ 10%.</strong> Есть — масштабируем до 100 и 300. Нет — сворачиваем и не вкладываем ещё 400 часов.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Партнёрство</p>
+    <h2>Ответы на его вопросы — и на те, которые он не задал</h2>
+    <p>«С тебя разраб, с меня маркетинг, что-то при желании допиливаем вместе» — это не схема, это тост. Три конкретные проблемы.</p>
+
+    <h3>1. Вклады несимметричны по риску, а не по объёму</h3>
+    <p>Вы вкладываете 330–480 часов <em>до</em> первой выручки — невозвратно и заранее. Он вкладывает работу и деньги <em>после</em> и порциями, с возможностью в любой момент снизить темп. При этом 90% работы <em>после</em> запуска тоже техническая: поддержка, edge-кейсы, изменения API, новые интеграции. Формула «пополам за роли» систематически перекладывает риск на вас.</p>
+    <p><strong>Как правильно:</strong> считать вклад в деньгах — ваши часы × ставка, его расходы × чек, его часы × его ставка. Прибыль 50/50 <em>после</em> возврата обоих вкладов. Либо доли фиксируются по факту вклада на момент выхода на 30 платящих.</p>
+
+    <h3>2. Оплата через его ИП — здесь нельзя соглашаться</h3>
+    <p>Сложите: деньги клиентов идут на его счёт, оферта от его имени, платёжный провайдер его, домен и бот скорее всего тоже, а на платформе MAX аккаунт разработчика вообще может быть <em>только</em> у верифицированного ИП или юрлица. Если это всё одно лицо и оно не вы — у вас нет ни рычага, ни выхода: код без клиентской базы и платёжки не стоит ничего, а забрать её вы не сможете.</p>
+    <p><strong>Как правильно:</strong> ООО на двоих с самого начала (регистрация — 3–5 дней, ~15 тыс. ₽ со всеми расходами) либо, как минимум, письменный договор о совместной деятельности, где зафиксированы: доли, кому принадлежат исключительные права на код, на чьё имя домен и репозиторий (доступ у обоих), кто держит расчётный счёт, как распределяется прибыль, и — обязательно — что происходит при выходе одного из партнёров: кто что забирает, есть ли право выкупа доли по формуле, есть ли неконкуренция.</p>
+    <p class="note">ИП как временное решение на период теста спроса — нормально, если это письменно зафиксировано как временное и параллельно подана регистрация юрлица. Как постоянная схема при выручке в сотни тысяч в месяц — нет.</p>
+
+    <h3>3. У маркетинга должны быть цифры, а не обещание</h3>
+    <p>Не «я сделаю маркетинг», а: 30 платящих за 60 дней после запуска, CAC ≤ 4 500 ₽, отток ≤ 10%/мес, и маркетинговый кэш (150–300 тыс. ₽ на тест) — с его стороны. Симметрично ваши обязательства: MVP за 6 недель после прохождения теста спроса, аптайм, поддержка первой линии первые 30 клиентов — вдвоём.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Разделение работ</caption>
+        <thead><tr><th>Вы</th><th>Он</th><th>Вместе</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Архитектура, бэкенд, атрибуция, агенты площадок, интеграции, биллинг, кабинет, мониторинг, безопасность, ПДн-контур</td>
+            <td>Позиционирование, лендинг, контент и SEO-документация, канал в MAX, посевы, партнёрка, аутрич, продажи, первая линия поддержки после 30-го клиента</td>
+            <td>Цены, роадмап, интервью с клиентами, первые 30 клиентов ведём лично оба, кейсы</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Решение</p>
+    <h2>Три варианта, один рекомендованный</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Вариант</th><th>Что это</th><th>Оценка</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>A. Как предложено</strong></td>
+            <td>Клон TGTrack под Telegram, 50/50 за роли, оплата через его ИП</td>
+            <td><span class="tag red">не заходить</span> Шестой игрок на рынке с бесплатными конкурентами и юридическим дедлайном через 4 месяца, при окупаемости в 18–24 месяца.</td>
+          </tr>
+          <tr>
+            <td><strong>B. MAX-first, с воротами</strong></td>
+            <td>Тот же механизм, точка приложения — MAX; Telegram как модуль переезда; 14 дней теста спроса до кода; юрлицо и KPI</td>
+            <td><span class="tag green">рекомендую</span> Растущая площадка, слабая аналитика, барьер входа в виде верификации ИП, реалистичная цель — 150–500 тыс. ₽/мес через год.</td>
+          </tr>
+          <tr>
+            <td><strong>C. Услуга вместо продукта</strong></td>
+            <td>Продавать настройку атрибуции и связки «Директ/VK → канал в MAX» как проект за 50–150 тыс. ₽</td>
+            <td><span class="tag blue">как разведка боем</span> Деньги в этом же месяце, ноль продуктового риска, и главное — вы узнаете реальные боли клиентов раньше, чем напишете код. Отличный способ прожить те самые 14 дней теста спроса.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Практически:</strong> сказать другу «да, тема интересная, но заходим не в Telegram и не на таких условиях», предложить вариант B, и первые две недели потратить на C — это и проверка спроса, и деньги, и материал для будущего продукта. Если за 14 дней не находится 10 человек, готовых заплатить вперёд — вы сэкономили 400 часов.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Черновик</p>
+    <h2>Сообщение другу</h2>
+    <div class="message">
+      <p>Тема правда денежная, я копнул глубже. Но два момента, из-за которых в том виде, как ты предлагаешь, я не пойду.</p>
+      <p>Первое: конкурентов там не один. Кроме TGTrack есть Botman Радар (аналитика вообще бесплатно, Pro от 700 ₽), Botica (ООО, 2000+ каналов, официальный партнёр MAX), Maxiflow, gotg.me за 999, Mobzio. То есть базовую функциональность уже раздают даром, и копия TGTrack будет конкурировать только ценой.</p>
+      <p>Второе, и оно решающее: Telegram в России выключают. С февраля замедление, в апреле блокировка дошла до ~95%, в июне MAX впервые обогнал Telegram по месячной аудитории. А главное — ФАС дала переходный период только до 31 декабря 2026, с января реклама в Telegram становится незаконной, штрафы до 500 тыс. на юрлицо и на всю цепочку, включая владельца канала. Мы будем запускать платные тарифы примерно в декабре — ровно в тот месяц, когда у наших клиентов основной канал закупки станет штрафуемым. Разработка окупается за 18–24 месяца, рынку осталось 4. Это просто не сходится по календарю.</p>
+      <p>Что предлагаю вместо. Тот же продукт, но под MAX: там реклама в Директе появилась в мае, подписчик стоит 50–120 ₽, каналы открыли всем, рекламодатели идут, а аналитики почти нет. Плюс атрибуция в MAX технически сложнее (в API нет привязки вступления к конкретной ссылке), и вход туда только для верифицированных ИП и юрлиц — то есть это не копируется за выходные. Telegram поддержим как модуль, пока он живой, и как «перевези аудиторию и историю».</p>
+      <p>По ролям согласен: с меня продукт и техника, с тебя маркетинг и продажи, цены и роадмап вместе. Но пополам просто за роли не подпишу. Я вкладываю 350–450 часов до первой выручки, это под 800 тыс. по моей ставке, и вся работа после запуска тоже в основном техническая. Давай считать вклад в деньгах с обеих сторон — мои часы по ставке, твои расходы и часы — и делить прибыль пополам после возврата вкладов.</p>
+      <p>Оплату на твоё ИП постоянной схемой не хочу: тогда у тебя клиентская база, платёжка, оферта и аккаунт разработчика в MAX, а у меня только код, который без всего этого ничего не стоит. Давай сразу ООО на двоих, это 3–5 дней. И письменно: доли, чей код, на кого домен и репозиторий, что происходит, если один выходит.</p>
+      <p>И до кода — две недели теста спроса: лендинг, 30 разговоров с теми, кто уже льёт в MAX, и предоплаты. Если наберём 10 человек, готовых заплатить вперёд, — я сажусь и делаю MVP за 6 недель. Не наберём — разошлись, потеряв две недели вместо полугода. Дальше ворота: 30 платящих за 60 дней после запуска, CAC до 4,5 тыс., отток до 10%. Сходится — идём к 100 и 300.</p>
+      <p>По такой схеме я в деле.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Проверка себя</p>
+    <h2>Что должно оказаться правдой, чтобы мой вывод был неверным</h2>
+    <details>
+      <summary>ФАС продлевает переходный период или закон меняют</summary>
+      <p>Вероятно частично: рынок в 40 млрд не выключают одним движением, отсрочку могут продлить. Но даже продление на год не отменяет замедления, потери 5–6 млн пользователей в месяц и перетока рекламодателей. Следить: официальные разъяснения ФАС в ноябре–декабре 2026.</p>
+    </details>
+    <details>
+      <summary>Telegram договаривается, блокировку снимают</summary>
+      <p>Это единственный сценарий, при котором Telegram-first снова имеет смысл. Требует выполнения «закона о приземлении», локализации данных и снятия уголовных претензий к основателю. На горизонте квартала маловероятно, но если произойдёт — рынок откроется резко, и выигрывает тот, у кого продукт уже готов. Это аргумент делать архитектуру мультиплощадочной с первого дня, а не аргумент делать Telegram-only.</p>
+    </details>
+    <details>
+      <summary>MAX не взлетает как рекламная площадка</summary>
+      <p>Реальный риск: охват там во многом обеспечен предустановкой, а не любовью, в каналы MAX перешло 10–15% аудитории блогеров, и алгоритмов рекомендаций уровня Telegram пока нет. Если рекламные бюджеты туда не пойдут — платить за аналитику будет некому. Проверяется тестом спроса за 14 дней, до вложения часов.</p>
+    </details>
+    <details>
+      <summary>Моя оценка базы TGTrack занижена</summary>
+      <p>Возможно: 10 008 — это внешний счётчик, реальную долю платящих не знает никто снаружи. Если у них 1 000 платящих, ниша вдвое больше моей оценки — но выводы про календарь и конкурентов это не меняет, а проверяется одним разговором с их основателем (он публичен: @varivan, канал @sales_smb) или с их клиентами из сообщества.</p>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <footer class="sources">
+    <p class="kicker">Источники</p>
+    <ul>
+      <li><a href="https://tgtrack.ru/">tgtrack.ru</a> — тарифы, механика, реквизиты ИП</li>
+      <li><a href="https://doc.tgtrack.ru/doc/optimizaciya-reklamy-na-podpiski">doc.tgtrack.ru</a> — передача подписок в рекламные системы</li>
+      <li><a href="https://tgland.ru/telegram/catalog/bot/czjy-otkuda-podpiski-bot">tgland.ru</a> — 10 008 пользователей @tgTrack_bot, 01.09.2026</li>
+      <li><a href="https://botman.pro/radar/">botman.pro/radar</a> — Botman Радар, тарифы и атрибуция</li>
+      <li><a href="https://botica.pro/">botica.pro</a> — Botica, партнёр MAX</li>
+      <li><a href="https://maxiflow.app/">maxiflow.app</a> — тарифы 1 990 / 4 990 / 14 900</li>
+      <li><a href="https://gotg.me/">gotg.me</a> — Free / Pro 999 ₽</li>
+      <li><a href="https://mobz.io/blog/otsledit-podpiski-max">mobz.io</a> — атрибуция подписок в MAX</li>
+      <li><a href="https://allo.tochka.com/zapret-reklamy-v-telegram">allo.tochka.com</a> — что можно и нельзя в Telegram, штрафы по ст. 14.3 КоАП</li>
+      <li><a href="https://www.garant.ru/news/2029712/">garant.ru</a> — переходный период ФАС до конца 2026</li>
+      <li><a href="https://ru.wikipedia.org/wiki/%D0%91%D0%BB%D0%BE%D0%BA%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B0_Telegram_%D0%B2_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B8_(2026)">Хронология блокировки Telegram (2026)</a></li>
+      <li><a href="https://habr.com/ru/news/1061678/">habr.com</a> — Mediascope: MAX обогнал Telegram, июнь 2026</li>
+      <li><a href="https://elama.ru/blog/reklama-v-max-cherez-yandex-direct/">elama.ru</a> — реклама в MAX через Яндекс Директ</li>
+      <li><a href="https://maxofficial.ru/blog/skolko-stoit-podpischik-v-max-v-2026-posevy-vk-ads-i-yandeks-direkt">maxofficial.ru</a> — цена подписчика в MAX: посевы, VK Ads, Директ</li>
+      <li><a href="https://dev.max.ru/docs-api/objects/Update">dev.max.ru</a> — события user_added / user_removed, ограничения платформы</li>
+      <li><a href="https://ppc.world/news/interes-reklamodateley-k-telegram-ads-upal-pochti-na-tret-bolshoe-issledovanie-digital-rynka-2026/">ppc.world</a> — исследование digital-рынка 2026, 600 респондентов</li>
+    </ul>
+    <p class="note" style="margin-top:20px">Оценки численности платящих клиентов, размера ниши и сценариев окупаемости — модельные: они построены на публичных данных и явных допущениях, перечисленных рядом с каждой таблицей, и не являются измеренными величинами. * Meta и Instagram — организация признана экстремистской и запрещена в РФ.</p>
+  </footer>
+
+</div>

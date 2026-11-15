@@ -1,0 +1,938 @@
+<title>Экономика и MVP под MAX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=PT+Serif:ital,wght@0,400;0,700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+  :root {
+    --ground: #EDF0F3;
+    --surface: #FFFFFF;
+    --surface-2: #F4F7F9;
+    --ink: #14181D;
+    --ink-2: #454E59;
+    --ink-3: #6C7681;
+    --line: #D7DDE3;
+    --line-2: #BAC3CC;
+    --signal: #B03A22;
+    --signal-soft: #F7E8E3;
+    --data: #2B5A86;
+    --data-soft: #E3EDF5;
+    --go: #1E6A4C;
+    --go-soft: #E0EFE8;
+    --warn: #8E6108;
+    --warn-soft: #F6EEDC;
+
+    /* chart marks — validated for CVD and contrast in both themes */
+    --c-neg: #B03A22;
+    --c-pos: #1B5FA6;
+    --c-grid: #DDE3E9;
+
+    --f-display: "PT Serif", Georgia, "Times New Roman", serif;
+    --f-body: "Golos Text", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1317;
+      --surface: #161B21;
+      --surface-2: #1B222A;
+      --ink: #E7ECF1;
+      --ink-2: #AFB9C4;
+      --ink-3: #808B98;
+      --line: #262F38;
+      --line-2: #3A4550;
+      --signal: #E4795F;
+      --signal-soft: #2E1D18;
+      --data: #83AED7;
+      --data-soft: #16222D;
+      --go: #5FB893;
+      --go-soft: #122720;
+      --warn: #D6A44A;
+      --warn-soft: #251E10;
+      --c-neg: #CF6247;
+      --c-pos: #4E96D6;
+      --c-grid: #262F38;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0F1317;
+    --surface: #161B21;
+    --surface-2: #1B222A;
+    --ink: #E7ECF1;
+    --ink-2: #AFB9C4;
+    --ink-3: #808B98;
+    --line: #262F38;
+    --line-2: #3A4550;
+    --signal: #E4795F;
+    --signal-soft: #2E1D18;
+    --data: #83AED7;
+    --data-soft: #16222D;
+    --go: #5FB893;
+    --go-soft: #122720;
+    --warn: #D6A44A;
+    --warn-soft: #251E10;
+    --c-neg: #CF6247;
+    --c-pos: #4E96D6;
+    --c-grid: #262F38;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .doc {
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(20px, 1fr)
+      [wide-start] minmax(0, 160px)
+      [content-start] minmax(0, 720px) [content-end]
+      minmax(0, 160px) [wide-end]
+      minmax(20px, 1fr) [full-end];
+    padding: 0 0 96px;
+  }
+  .doc > * { grid-column: content; }
+  .doc > .wide { grid-column: wide; }
+
+  h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2.1rem, 5.4vw, 3.2rem); line-height: 1.08; letter-spacing: -0.015em; margin: 10px 0 18px; }
+  h2 { font-size: clamp(1.5rem, 3.2vw, 1.95rem); line-height: 1.18; letter-spacing: -0.01em; margin: 8px 0 14px; }
+  h3 { font-family: var(--f-body); font-size: 1.02rem; font-weight: 600; margin: 26px 0 8px; }
+  h4 { font-family: var(--f-body); font-size: 0.95rem; font-weight: 600; margin: 0 0 10px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--data); text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--data); outline-offset: 3px; border-radius: 2px;
+  }
+  strong { font-weight: 600; }
+
+  .kicker {
+    font-family: var(--f-mono); font-size: 0.7rem; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px;
+  }
+  .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+  section { margin-top: 58px; }
+  section > p, section > ul, section > ol, section > .note, section > .callout { max-width: 68ch; }
+  ul, ol { margin: 0 0 16px; padding-left: 1.15em; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--ink-3); }
+
+  header.masthead { padding: 68px 0 8px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--data); background: var(--data-soft);
+    border: 1px solid color-mix(in srgb, var(--data) 26%, transparent);
+    padding: 5px 11px; border-radius: 2px;
+  }
+  .dek { font-size: 1.16rem; line-height: 1.55; color: var(--ink-2); max-width: 60ch; margin-bottom: 26px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 26px; font-family: var(--f-mono); font-size: 0.76rem; color: var(--ink-3); padding-bottom: 26px; }
+
+  .callout {
+    border-left: 3px solid var(--data); background: var(--surface);
+    padding: 18px 20px; margin: 24px 0; border-radius: 0 3px 3px 0;
+  }
+  .callout.risk { border-left-color: var(--signal); }
+  .callout.good { border-left-color: var(--go); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label {
+    font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 7px;
+  }
+  .note { font-size: 0.88rem; color: var(--ink-3); line-height: 1.5; }
+
+  /* ---------- controls ---------- */
+  .panel {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 3px; padding: 20px 22px 24px; margin: 26px 0 0;
+  }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 20px; }
+  .presets .lbl {
+    font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-3); margin-right: 4px;
+  }
+  button.preset {
+    font-family: var(--f-body); font-size: 0.85rem; font-weight: 500;
+    color: var(--ink-2); background: var(--surface-2);
+    border: 1px solid var(--line-2); border-radius: 2px;
+    padding: 6px 13px; cursor: pointer;
+  }
+  button.preset:hover { border-color: var(--data); color: var(--ink); }
+  button.preset[aria-pressed="true"] { background: var(--data-soft); border-color: var(--data); color: var(--data); }
+
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 18px 26px; }
+  .ctl label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 0.86rem; color: var(--ink-2); }
+  .ctl .val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 0.88rem; font-weight: 500; color: var(--ink); white-space: nowrap; }
+  .ctl input[type="range"] { width: 100%; margin: 6px 0 0; accent-color: var(--data); }
+  .ctl .hint { font-size: 0.75rem; color: var(--ink-3); line-height: 1.35; display: block; margin-top: 2px; }
+
+  /* ---------- stats ---------- */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line);
+    border-radius: 3px; margin: 26px 0; overflow: hidden;
+  }
+  .stat { background: var(--surface); padding: 18px 18px 20px; }
+  .stat .v {
+    font-family: var(--f-mono); font-variant-numeric: tabular-nums;
+    font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; display: block; line-height: 1.1;
+  }
+  .stat .k { font-size: 0.8rem; color: var(--ink-3); line-height: 1.4; display: block; margin-top: 7px; }
+  .stat.red .v { color: var(--signal); }
+  .stat.blue .v { color: var(--data); }
+  .stat.green .v { color: var(--go); }
+
+  /* ---------- charts ---------- */
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 22px; margin: 26px 0 0; }
+  .chart {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 3px; padding: 18px 18px 12px; position: relative;
+  }
+  .chart .title { font-size: 0.95rem; font-weight: 600; margin: 0 0 2px; }
+  .chart .sub { font-size: 0.8rem; color: var(--ink-3); margin: 0 0 12px; }
+  .chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+  .grid-line { stroke: var(--c-grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .zero-line { stroke: var(--line-2); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .axis-text { fill: var(--ink-3); font-family: var(--f-mono); font-size: 10px; }
+  .series-line { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+  .s-pos { stroke: var(--c-pos); }
+  .s-neg { stroke: var(--c-neg); }
+  .a-pos { fill: var(--c-pos); opacity: 0.13; }
+  .a-neg { fill: var(--c-neg); opacity: 0.13; }
+  .cross { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+  .dot { stroke: var(--surface); stroke-width: 2; }
+  .endlabel { font-family: var(--f-mono); font-size: 11px; font-weight: 700; }
+  .tip {
+    position: absolute; pointer-events: none; opacity: 0;
+    background: var(--surface); border: 1px solid var(--line-2);
+    border-radius: 3px; padding: 7px 10px; font-size: 0.78rem; line-height: 1.4;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.10); white-space: nowrap; transition: opacity .1s;
+  }
+  .tip b { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------- tables ---------- */
+  .table-wrap {
+    overflow-x: auto; margin: 22px 0 10px;
+    border: 1px solid var(--line); border-radius: 3px; background: var(--surface);
+  }
+  .table-scroll { max-height: 420px; overflow-y: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  caption {
+    caption-side: top; text-align: left; font-family: var(--f-mono); font-size: 0.7rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); padding: 14px 16px 0;
+  }
+  th, td { padding: 9px 13px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--f-mono); font-size: 0.67rem; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
+    border-bottom: 1px solid var(--line-2); background: var(--surface); position: sticky; top: 0; z-index: 1;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody th { font-weight: 600; font-size: 0.9rem; }
+  tr.total td, tr.total th { background: var(--surface-2); font-weight: 600; }
+  td.neg { color: var(--signal); }
+  tr.mark td, tr.mark th { background: var(--data-soft); }
+  .tag {
+    display: inline-block; font-family: var(--f-mono); font-size: 0.65rem;
+    letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; white-space: nowrap;
+  }
+  .tag.red { color: var(--signal); background: var(--signal-soft); }
+  .tag.green { color: var(--go); background: var(--go-soft); }
+  .tag.blue { color: var(--data); background: var(--data-soft); }
+  .tag.amber { color: var(--warn); background: var(--warn-soft); }
+
+  /* ---------- weeks ---------- */
+  .week {
+    display: grid; grid-template-columns: 92px 1fr; gap: 0 20px;
+    border-top: 1px solid var(--line); padding: 18px 0;
+  }
+  .week:last-of-type { border-bottom: 1px solid var(--line); }
+  .week .wk {
+    font-family: var(--f-mono); font-size: 0.78rem; color: var(--data);
+    font-weight: 700; letter-spacing: 0.02em; padding-top: 2px;
+  }
+  .week .wk span { display: block; color: var(--ink-3); font-weight: 400; font-size: 0.72rem; margin-top: 3px; }
+  .week h4 { margin-bottom: 6px; }
+  .week ul { margin: 0 0 10px; }
+  .week li { font-size: 0.92rem; line-height: 1.45; margin-bottom: 4px; }
+  .demo {
+    font-size: 0.84rem; color: var(--ink-2); background: var(--surface-2);
+    border-left: 2px solid var(--go); padding: 7px 12px; border-radius: 0 2px 2px 0;
+  }
+  .demo b { color: var(--go); font-weight: 600; }
+  @media (max-width: 560px) {
+    .week { grid-template-columns: 1fr; gap: 8px; }
+  }
+
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    padding-left: 30px; position: relative; margin-bottom: 11px; font-size: 0.95rem;
+  }
+  .checklist li::before {
+    content: ""; position: absolute; left: 0; top: 5px;
+    width: 15px; height: 15px; border: 1.5px solid var(--line-2); border-radius: 2px;
+  }
+  .checklist li b { font-weight: 600; }
+  .checklist li .lead { color: var(--signal); font-family: var(--f-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  footer.sources {
+    margin-top: 64px; padding-top: 26px; border-top: 1px solid var(--line);
+    font-size: 0.85rem; color: var(--ink-3);
+  }
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 54px 0 0; }
+</style>
+
+<div class="doc">
+
+  <header class="masthead">
+    <p class="eyebrow">Разбор · часть 3 · сентябрь 2026</p>
+    <h1>Экономика и MVP под MAX</h1>
+    <p class="dek">Живая финансовая модель на 24 месяца — двигайте допущения и смотрите, где проект проходит через ноль, — и план сборки MVP за шесть недель с воротами на каждой неделе.</p>
+    <div class="meta">
+      <span>Модель пересчитывается в браузере</span>
+      <span>Ничего не сохраняется на сервер</span>
+      <span>Продолжение разборов 1 и 2</span>
+    </div>
+  </header>
+
+  <section id="model">
+    <p class="kicker">Финмодель</p>
+    <h2>Допущения</h2>
+    <p>Три пресета — это не прогнозы, а границы разумного. «Базовый» настроен так, чтобы к 12-му месяцу выйти на цифры, которые я считаю достижимыми при честной работе: около 150 платящих и 250 тыс. ₽ MRR.</p>
+
+    <div class="wide panel">
+      <div class="presets">
+        <span class="lbl">Пресет</span>
+        <button class="preset" type="button" data-preset="low" aria-pressed="false">Осторожный</button>
+        <button class="preset" type="button" data-preset="base" aria-pressed="true">Базовый</button>
+        <button class="preset" type="button" data-preset="high" aria-pressed="false">Агрессивный</button>
+      </div>
+      <div class="controls" id="controls"></div>
+    </div>
+
+    <div class="wide stats" id="stats"></div>
+
+    <div class="wide charts">
+      <div class="chart" id="chart-cash">
+        <p class="title">Накопленный денежный поток</p>
+        <p class="sub">С учётом стартовых вложений. Пересечение нуля — момент, когда проект вернул вложенные деньги.</p>
+        <svg viewBox="0 0 640 250" role="img" aria-label="График накопленного денежного потока по месяцам"></svg>
+        <div class="tip"></div>
+      </div>
+      <div class="chart" id="chart-mrr">
+        <p class="title">MRR, ₽ в месяц</p>
+        <p class="sub">Регулярная выручка на конец месяца.</p>
+        <svg viewBox="0 0 640 250" role="img" aria-label="График регулярной выручки по месяцам"></svg>
+        <div class="tip"></div>
+      </div>
+    </div>
+
+    <div class="wide table-wrap">
+      <div class="table-scroll">
+        <table id="model-table">
+          <caption>Помесячно, 24 месяца</caption>
+          <thead>
+            <tr>
+              <th>Мес</th>
+              <th class="n">Новых</th>
+              <th class="n">Отток</th>
+              <th class="n">Клиентов</th>
+              <th class="n">MRR</th>
+              <th class="n">Вал. прибыль</th>
+              <th class="n">Маркетинг</th>
+              <th class="n">Денежный поток</th>
+              <th class="n">Накопленный</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>Как считается</h3>
+    <ul>
+      <li>Клиенты на конец месяца = клиенты на начало − отток от базы начала месяца + новые. MRR = клиенты на конец × ARPU.</li>
+      <li>Валовая прибыль = MRR × маржа. Маржа 85% — это эквайринг и касса (около 3,5%), инфраструктура, сервисы, поддержка.</li>
+      <li>Маркетинг = новые клиенты × CAC. Это <strong>кэш-расход</strong>, и именно он создаёт кассовый разрыв в первый год.</li>
+      <li>LTV = ARPU × маржа ÷ отток. Возврат CAC = CAC ÷ (ARPU × маржа), в месяцах.</li>
+      <li>Накопленный поток стартует с минуса: стартовый кэш плюс, если галочка учёта труда включена, ваши часы по ставке.</li>
+    </ul>
+    <div class="callout risk">
+      <span class="label">Чего модель не учитывает</span>
+      <p>Годовых оплат со скидкой (они улучшают кэш, но снижают ARPU), сезонности рекламных бюджетов, налогов, возвратов, апгрейдов между тарифами и того, что первые 20 клиентов вы обслуживаете руками. Это модель для принятия решения «идти или нет», а не бухгалтерия.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Что читать в модели</p>
+    <h2>Три числа, которые решают всё</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Число</th><th>Где смотреть</th><th>Что делать, если плохо</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Пик кассового разрыва</strong></td>
+            <td>Самая нижняя точка левого графика. В базовом сценарии это около полумиллиона рублей в районе 7–8-го месяца.</td>
+            <td>Это деньги, которые кто-то должен физически иметь. Если их нет — снижать CAC (партнёрка вместо закупки), брать предоплату за год или замедлять привлечение.</td>
+          </tr>
+          <tr>
+            <td><strong>LTV / CAC</strong></td>
+            <td>В плитках. Ниже 3 — модель не выдержит масштабирования, ниже 2 — привлечение убыточно.</td>
+            <td>Не «покупать больше», а чинить отток и чек: агентский тариф улучшает обе цифры сразу.</td>
+          </tr>
+          <tr>
+            <td><strong>Месяц возврата вложений</strong></td>
+            <td>Пересечение нуля. Сравнивайте его с горизонтом, на котором площадка закроет дыру сама, — это примерно 6–9 месяцев.</td>
+            <td>Если возврат позже, чем окно, — либо резать объём MVP и выходить быстрее, либо не заходить.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="mvp">
+    <p class="kicker">План</p>
+    <h2>MVP за шесть недель</h2>
+    <p>Полный продукт — это 330–480 часов. За шесть недель full-time помещается 240. Значит, MVP надо резать сознательно, а не обнаружить нехватку на пятой неделе.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Что входит и что вылетает</caption>
+        <thead><tr><th>В MVP</th><th>В версию 1.1 (недели 7–12)</th><th>Не делаем вообще</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>
+              Трекинговые ссылки и редирект<br>
+              Агент MAX: <span class="num">bot_started</span>, <span class="num">user_added</span>, <span class="num">user_removed</span><br>
+              Обе схемы атрибуции + сверка<br>
+              Отчёт по источникам с удержанием 24 ч / 7 д / 30 д<br>
+              Ежедневный отчёт в мессенджер<br>
+              Офлайн-конверсии в Метрику и Директ<br>
+              Онбординг за 2 минуты + документация
+            </td>
+            <td>
+              Автоматический биллинг и чеки<br>
+              VK Ads<br>
+              Агент Telegram<br>
+              Агентский воркспейс, роли, white-label<br>
+              Выгрузки в Excel<br>
+              Открытое API
+            </td>
+            <td>
+              Конструктор лендингов<br>
+              Мини-аппы и их шаблоны<br>
+              CRM и воронки<br>
+              ИИ-ассистент<br>
+              Мобильное приложение<br>
+              <span class="note">Это есть у Botica и догонять там бессмысленно</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>День 1 — то, что имеет длинный срок ожидания</h3>
+    <p>Эти пункты не про код, но блокируют запуск. Начинать их надо в первый же день, параллельно тесту спроса.</p>
+    <ul class="checklist">
+      <li><span class="lead">блокер</span> <b>Верификация организации на dev.max.ru.</b> Платформа доступна только верифицированным ИП и юрлицам — резидентам РФ, лимит 5 ботов на организацию. Аккаунт оформлять на общее юрлицо, а не на одного партнёра.</li>
+      <li><span class="lead">блокер</span> <b>Сервер в РФ и домен с CA-сертификатом.</b> Вебхук MAX принимает только 443 и только с доверенным сертификатом, плюс сертификат Минцифры. Long polling — не для продакшена.</li>
+      <li><span class="lead">блокер</span> <b>Уведомление в РКН об обработке персональных данных</b> и локализация базы в России. Вы храните идентификаторы подписчиков — это ПДн.</li>
+      <li><b>Оферта, политика ПДн, согласие.</b> Юрист или готовый комплект — 20–50 тыс. ₽.</li>
+      <li><b>Ручная проверка ссылки-приглашения в MAX.</b> Сколько активных ссылок держит канал, что происходит со старой при обновлении, как выглядит переход из рекламы в закрытый канал. От ответа зависит вторая схема атрибуции — 10 минут в приложении.</li>
+      <li><b>Свой канал в MAX + тестовый канал-полигон.</b> На нём вы будете мерить точность и снимать первые кейсы.</li>
+    </ul>
+
+    <h3>Недели</h3>
+
+    <div class="week">
+      <div class="wk">Неделя 0<span>8–10 ч, параллельно тесту спроса</span></div>
+      <div>
+        <h4>Юридический и инфраструктурный контур</h4>
+        <ul>
+          <li>Пункты из чек-листа выше, поданы и запущены.</li>
+          <li>Репозиторий, окружения, деплой одной командой, базовый мониторинг и алерты.</li>
+          <li>Схема БД: каналы, ссылки, клики, события, подписки, пользователи.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> пустое приложение задеплоено на боевой домен и отвечает 200 на health-check.</p>
+      </div>
+    </div>
+
+    <div class="week">
+      <div class="wk">Неделя 1<span>40 ч</span></div>
+      <div>
+        <h4>Трекер кликов</h4>
+        <ul>
+          <li>Генерация трекинговых ссылок с параметрами: источник, кампания, креатив, пост, произвольные UTM.</li>
+          <li>Редирект с записью клика: время, гео, устройство, реферер, <span class="num">yclid</span> и прочие идентификаторы рекламных систем.</li>
+          <li>Дедупликация и отсев ботов: повторные заходы, префетч рекламных сетей, сканеры.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> ссылка ведёт в ваш канал за один переход, а клик виден в базе меньше чем за секунду.</p>
+      </div>
+    </div>
+
+    <div class="week">
+      <div class="wk">Неделя 2<span>40 ч</span></div>
+      <div>
+        <h4>Агент MAX</h4>
+        <ul>
+          <li>Регистрация бота, подписка на события через <span class="num">POST /subscriptions</span>, приём вебхука с проверкой секрета.</li>
+          <li>Обработка <span class="num">bot_started</span> с payload, <span class="num">user_added</span>, <span class="num">user_removed</span>.</li>
+          <li>Идемпотентность и защита от дублей: MAX может прислать событие повторно, а порядок не гарантирован.</li>
+          <li>Очередь и ретраи: если ваш сервер молчит 8 часов, подписку на события отключают.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> подписка и отписка на тестовом канале появляются в интерфейсе за 5–10 секунд, а повторная доставка события не создаёт вторую запись.</p>
+      </div>
+    </div>
+
+    <div class="week">
+      <div class="wk">Неделя 3<span>40 ч</span></div>
+      <div>
+        <h4>Движок атрибуции — сердце продукта</h4>
+        <ul>
+          <li>Схема А, точная: клик → <span class="num">max.ru/bot?start=clickId</span> → <span class="num">bot_started</span> → кнопка на канал → <span class="num">user_added</span>, склейка по user_id.</li>
+          <li>Схема Б, вероятностная: прямая ссылка, сопоставление по временному окну, приоритеты при пересечении окон, отложенные подписки.</li>
+          <li>Сверка схем между собой на одном потоке — это и есть будущая цифра точности на лендинге.</li>
+          <li>Хранение истории: повторные подписки, отписки и возвраты одного и того же человека.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> на полигоне с тремя источниками одновременно атрибуция сходится, и вы знаете свою точность в процентах — не «примерно», а числом.</p>
+      </div>
+    </div>
+
+    <div class="week">
+      <div class="wk">Неделя 4<span>40 ч</span></div>
+      <div>
+        <h4>То, за что платят: отчёты</h4>
+        <ul>
+          <li>Отчёт по источникам: клики, подписки, CR, CPS, удержание на 24 ч / 7 д / 30 д и <strong>стоимость живого подписчика</strong>.</li>
+          <li>Ежедневный отчёт в MAX и Telegram — главный механизм удержания у конкурентов, скопировать обязательно.</li>
+          <li>Веб-страница отчёта с фильтром по периоду и источнику. Минимум украшательств.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> отчёт можно показать чужому человеку без объяснений, и он сам скажет, какое размещение было провальным.</p>
+      </div>
+    </div>
+
+    <div class="week">
+      <div class="wk">Неделя 5<span>40 ч</span></div>
+      <div>
+        <h4>Обратная связь в рекламные системы</h4>
+        <ul>
+          <li>Передача подписок офлайн-конверсиями в Яндекс Метрику по <span class="num">yclid</span>, цель для оптимизации в Директе.</li>
+          <li>Проверка сквозного пути: конверсия долетела, цель видна, стратегия может на неё учиться.</li>
+          <li>Мастер подключения за 2 минуты: добавить бота, создать ссылку, подключить Метрику.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> на вашей собственной кампании в Директе подписки видны как конверсии, и вы можете показать это скриншотом. Это ваш главный аргумент в продажах.</p>
+      </div>
+    </div>
+
+    <div class="week">
+      <div class="wk">Неделя 6<span>35 ч</span></div>
+      <div>
+        <h4>Запуск</h4>
+        <ul>
+          <li>Лендинг с ценами и оффером, оферта, страница оплаты. Биллинг на первых 20 клиентах — ручной: счёт или ссылка на оплату, доступ включается руками. Экономит 30–45 часов.</li>
+          <li>10–15 страниц документации под поисковые запросы. У конкурентов документация приносит трафик годами.</li>
+          <li>Подключение первых десяти предоплативших, каждого лично.</li>
+        </ul>
+        <p class="demo"><b>Готово, когда:</b> есть первые деньги на счёте и первый кейс с цифрами до и после.</p>
+      </div>
+    </div>
+
+    <h3>Бюджет запуска — кэш до первой выручки</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Статья</th><th class="n">₽</th><th>Комментарий</th></tr></thead>
+        <tbody>
+          <tr><td>Регистрация юрлица</td><td class="n">15 000</td><td>с расчётным счётом и всеми расходами</td></tr>
+          <tr><td>Юридический комплект</td><td class="n">20 000 – 50 000</td><td>оферта, ПДн, уведомление в РКН, договор партнёрства</td></tr>
+          <tr><td>Домен, сертификаты, сервисы</td><td class="n">5 000</td><td></td></tr>
+          <tr><td>Инфраструктура, 3 месяца</td><td class="n">15 000 – 25 000</td><td>сервер и БД в РФ</td></tr>
+          <tr><td>Эквайринг и облачная касса</td><td class="n">10 000 – 15 000</td><td>подключение и первые месяцы</td></tr>
+          <tr><td>Лендинг и оформление</td><td class="n">30 000 – 80 000</td><td>можно сделать самим и сэкономить</td></tr>
+          <tr><td>Маркетинговый тест</td><td class="n">150 000 – 300 000</td><td>посевы в MAX, Директ, аутрич</td></tr>
+          <tr class="total"><td>Итого до запуска</td><td class="n">245 000 – 490 000</td><td>это и есть «стартовый кэш» в модели</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Ворота</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Точка</th><th>Условие продолжения</th><th>Если не выполнено</th></tr></thead>
+        <tbody>
+          <tr><td>Конец 2-й недели теста спроса</td><td>10 предоплат или 25 писем «беру» с названием канала</td><td>Не начинать разработку. Потеряно две недели.</td></tr>
+          <tr><td>Конец 3-й недели разработки</td><td>Точность атрибуции, которую не стыдно написать на сайте</td><td>Ещё неделя на движок либо отказ от схемы Б и честное ограничение продукта.</td></tr>
+          <tr><td>Конец 6-й недели</td><td>Первые деньги на счёте, один кейс с цифрами</td><td>Разбираться с оффером, а не дописывать функции.</td></tr>
+          <tr><td>90-й день</td><td>30 платящих, CAC ≤ 4 500 ₽, отток ≤ 10%</td><td>Сворачивать. Не вкладывать вторые 240 часов.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <footer class="sources">
+    <p class="note">Модель считается в браузере, значения хранятся только на вашем устройстве. Оценки часов — экспертные, для средней сложности реализации и одного разработчика. Технические ограничения площадки приведены по документации <a href="https://dev.max.ru/docs-api">dev.max.ru</a> на сентябрь 2026 и требуют перепроверки перед стартом: платформа меняется, за 2026 год уже отключали <span class="num">GET /chats</span> и переносили домен API.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var FIELDS = [
+    { id: "n1",        label: "Новых платящих в 1-й месяц", min: 1,   max: 30,   step: 1,    fmt: "int",  hint: "сколько реально подключите руками" },
+    { id: "growth",    label: "Рост привлечения в месяц",   min: 0,   max: 40,   step: 1,    fmt: "pct",  hint: "во сколько раз растёт поток новых" },
+    { id: "cap",       label: "Потолок новых в месяц",      min: 10,  max: 120,  step: 5,    fmt: "int",  hint: "предел вашей пропускной способности" },
+    { id: "arpu",      label: "ARPU, ₽ в месяц",            min: 700, max: 4000, step: 50,   fmt: "rub",  hint: "смесь тарифов 990 / 2490 / агентский" },
+    { id: "churn",     label: "Отток в месяц",              min: 3,   max: 20,   step: 0.5,  fmt: "pct",  hint: "у частников выше, у агентств вдвое ниже" },
+    { id: "cac",       label: "CAC, ₽",                     min: 500, max: 12000,step: 250,  fmt: "rub",  hint: "сколько стоит один платящий" },
+    { id: "gm",        label: "Валовая маржа",              min: 60,  max: 95,   step: 1,    fmt: "pct",  hint: "эквайринг, инфраструктура, поддержка" },
+    { id: "fixed",     label: "Постоянные расходы, ₽/мес",  min: 0,   max: 150000,step: 5000,fmt: "rub",  hint: "сервисы, касса, подписки, инструменты" },
+    { id: "startCash", label: "Стартовый кэш, ₽",           min: 0,   max: 800000,step: 25000,fmt: "rub", hint: "вложения до первой выручки" },
+    { id: "hours",     label: "Часы разработки",            min: 0,   max: 800,  step: 20,   fmt: "int",  hint: "0 — если не считать труд вложением" },
+    { id: "rate",      label: "Ставка часа, ₽",             min: 0,   max: 6000, step: 100,  fmt: "rub",  hint: "во сколько оцениваете свой час" }
+  ];
+
+  var PRESETS = {
+    low:  { n1: 4,  growth: 12, cap: 25, arpu: 1300, churn: 12, cac: 5000, gm: 85, fixed: 25000, startCash: 300000, hours: 240, rate: 2000 },
+    base: { n1: 6,  growth: 18, cap: 40, arpu: 1600, churn: 9,  cac: 3500, gm: 85, fixed: 30000, startCash: 300000, hours: 240, rate: 2000 },
+    high: { n1: 10, growth: 22, cap: 70, arpu: 2100, churn: 7,  cac: 3000, gm: 87, fixed: 45000, startCash: 350000, hours: 240, rate: 2000 }
+  };
+
+  var MONTHS = 24;
+  var state = Object.assign({}, PRESETS.base);
+
+  try {
+    var saved = window.localStorage.getItem("maxmodel.v1");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      FIELDS.forEach(function (f) {
+        if (typeof parsed[f.id] === "number" && isFinite(parsed[f.id])) state[f.id] = parsed[f.id];
+      });
+    }
+  } catch (e) { /* приватный режим или заблокированное хранилище — работаем на дефолтах */ }
+
+  function save() {
+    try { window.localStorage.setItem("maxmodel.v1", JSON.stringify(state)); } catch (e) {}
+  }
+
+  /* ---------- formatting ---------- */
+  function nbsp(s) { return s.replace(/ /g, " "); }
+  function group(n) {
+    var neg = n < 0;
+    var s = String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return (neg ? "−" : "") + s;
+  }
+  function rub(n) { return group(n) + " ₽"; }
+  function shortRub(n) {
+    var a = Math.abs(n), sign = n < 0 ? "−" : "";
+    if (a >= 1000000) return sign + (a / 1000000).toFixed(a >= 10000000 ? 0 : 1).replace(".", ",") + " млн";
+    if (a >= 1000) return sign + Math.round(a / 1000) + " тыс.";
+    return sign + Math.round(a);
+  }
+  function fmtField(f, v) {
+    if (f.fmt === "pct") return (Math.round(v * 10) / 10).toString().replace(".", ",") + "%";
+    if (f.fmt === "rub") return rub(v);
+    return group(v);
+  }
+  function plural(n, one, few, many) {
+    var a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return many;
+    if (b > 1 && b < 5) return few;
+    if (b === 1) return one;
+    return many;
+  }
+
+  /* ---------- model ---------- */
+  function compute(s) {
+    var rows = [];
+    var cust = 0;
+    var gm = s.gm / 100, ch = s.churn / 100, g = 1 + s.growth / 100;
+    var labor = s.hours * s.rate;
+    var cumCash = -s.startCash;
+    var cumFull = -(s.startCash + labor);
+
+    for (var t = 1; t <= MONTHS; t++) {
+      var newC = Math.min(s.cap, Math.round(s.n1 * Math.pow(g, t - 1)));
+      var churned = Math.round(cust * ch);
+      cust = cust - churned + newC;
+      var mrr = cust * s.arpu;
+      var gross = mrr * gm;
+      var mkt = newC * s.cac;
+      var cf = gross - s.fixed - mkt;
+      cumCash += cf;
+      cumFull += cf;
+      rows.push({ t: t, newC: newC, churned: churned, cust: cust, mrr: mrr, gross: gross, mkt: mkt, cf: cf, cum: cumCash, cumFull: cumFull });
+    }
+
+    var ltv = ch > 0 ? (s.arpu * gm) / ch : 0;
+    var ltvCac = s.cac > 0 ? ltv / s.cac : 0;
+    var cacPayback = (s.arpu * gm) > 0 ? s.cac / (s.arpu * gm) : 0;
+
+    function firstMonth(pred) {
+      for (var i = 0; i < rows.length; i++) if (pred(rows[i])) return rows[i].t;
+      return null;
+    }
+
+    var trough = rows[0].cum, troughM = 1;
+    rows.forEach(function (r) { if (r.cum < trough) { trough = r.cum; troughM = r.t; } });
+
+    return {
+      rows: rows,
+      ltv: ltv,
+      ltvCac: ltvCac,
+      cacPayback: cacPayback,
+      opBreakeven: firstMonth(function (r) { return r.cf > 0; }),
+      cashBack: firstMonth(function (r) { return r.cum >= 0; }),
+      fullBack: firstMonth(function (r) { return r.cumFull >= 0; }),
+      trough: Math.min(trough, -s.startCash),
+      troughM: troughM,
+      labor: labor,
+      mrr12: rows[11].mrr, cust12: rows[11].cust,
+      mrr24: rows[23].mrr, cust24: rows[23].cust,
+      mktTotal: rows.reduce(function (a, r) { return a + r.mkt; }, 0)
+    };
+  }
+
+  /* ---------- controls ---------- */
+  var controlsEl = document.getElementById("controls");
+  FIELDS.forEach(function (f) {
+    var wrap = document.createElement("div");
+    wrap.className = "ctl";
+    wrap.innerHTML =
+      '<label for="f-' + f.id + '"><span>' + f.label + '</span><span class="val" id="v-' + f.id + '"></span></label>' +
+      '<input type="range" id="f-' + f.id + '" min="' + f.min + '" max="' + f.max + '" step="' + f.step + '">' +
+      '<span class="hint">' + f.hint + '</span>';
+    controlsEl.appendChild(wrap);
+    var input = wrap.querySelector("input");
+    input.addEventListener("input", function () {
+      state[f.id] = parseFloat(input.value);
+      markPreset(null);
+      render();
+      save();
+    });
+  });
+
+  var presetBtns = Array.prototype.slice.call(document.querySelectorAll("button.preset"));
+  presetBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      state = Object.assign({}, PRESETS[b.dataset.preset]);
+      markPreset(b.dataset.preset);
+      render();
+      save();
+    });
+  });
+  function markPreset(name) {
+    presetBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.preset === name ? "true" : "false"); });
+  }
+  function detectPreset() {
+    var found = null;
+    Object.keys(PRESETS).forEach(function (k) {
+      var p = PRESETS[k], same = true;
+      FIELDS.forEach(function (f) { if (p[f.id] !== state[f.id]) same = false; });
+      if (same) found = k;
+    });
+    return found;
+  }
+
+  /* ---------- charts ---------- */
+  var W = 640, H = 250, PAD = { l: 52, r: 46, t: 14, b: 26 };
+  var PW = W - PAD.l - PAD.r, PH = H - PAD.t - PAD.b;
+
+  function svgEl(name, attrs) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function x(i) { return PAD.l + (PW * i) / (MONTHS - 1); }
+
+  function drawChart(hostId, values, opts) {
+    var host = document.getElementById(hostId);
+    var svg = host.querySelector("svg");
+    var tip = host.querySelector(".tip");
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    var maxV = Math.max.apply(null, values);
+    var minV = Math.min.apply(null, values);
+    if (opts.zeroBase) { maxV = Math.max(maxV, 0); minV = Math.min(minV, 0); }
+    else { minV = Math.min(minV, 0); }
+    if (maxV === minV) maxV = minV + 1;
+    var pad = (maxV - minV) * 0.08;
+    var hi = maxV + pad, lo = opts.zeroBase ? 0 : minV - pad;
+    function y(v) { return PAD.t + PH - ((v - lo) / (hi - lo)) * PH; }
+
+    /* grid */
+    var ticks = 4;
+    for (var g = 0; g <= ticks; g++) {
+      var val = lo + ((hi - lo) * g) / ticks;
+      var yy = y(val);
+      svg.appendChild(svgEl("line", { x1: PAD.l, x2: PAD.l + PW, y1: yy, y2: yy, "class": "grid-line" }));
+      var lab = svgEl("text", { x: PAD.l - 8, y: yy + 3.5, "class": "axis-text", "text-anchor": "end" });
+      lab.textContent = shortRub(val);
+      svg.appendChild(lab);
+    }
+
+    /* zero line */
+    if (lo < 0 && hi > 0) {
+      svg.appendChild(svgEl("line", { x1: PAD.l, x2: PAD.l + PW, y1: y(0), y2: y(0), "class": "zero-line" }));
+    }
+
+    /* x labels */
+    [1, 6, 12, 18, 24].forEach(function (m) {
+      var t = svgEl("text", { x: x(m - 1), y: H - 8, "class": "axis-text", "text-anchor": "middle" });
+      t.textContent = m;
+      svg.appendChild(t);
+    });
+    var xl = svgEl("text", { x: PAD.l + PW, y: H - 8, "class": "axis-text", "text-anchor": "end" });
+    xl.textContent = "мес";
+    svg.appendChild(xl);
+
+    /* area + line, split at zero when the series crosses it */
+    var y0 = y(Math.max(lo, Math.min(hi, 0)));
+    function areaPath(clipTop, clipBottom) {
+      var d = "M " + x(0) + " " + y0;
+      values.forEach(function (v, i) { d += " L " + x(i) + " " + y(v); });
+      d += " L " + x(values.length - 1) + " " + y0 + " Z";
+      return d;
+    }
+    var clipPos = svgEl("clipPath", { id: hostId + "-cp-pos" });
+    clipPos.appendChild(svgEl("rect", { x: PAD.l, y: PAD.t, width: PW, height: Math.max(0, y0 - PAD.t) }));
+    var clipNeg = svgEl("clipPath", { id: hostId + "-cp-neg" });
+    clipNeg.appendChild(svgEl("rect", { x: PAD.l, y: y0, width: PW, height: Math.max(0, PAD.t + PH - y0) }));
+    var defs = svgEl("defs", {});
+    defs.appendChild(clipPos); defs.appendChild(clipNeg);
+    svg.appendChild(defs);
+
+    var ap = areaPath();
+    svg.appendChild(svgEl("path", { d: ap, "class": "a-pos", "clip-path": "url(#" + hostId + "-cp-pos)" }));
+    svg.appendChild(svgEl("path", { d: ap, "class": "a-neg", "clip-path": "url(#" + hostId + "-cp-neg)" }));
+
+    var lineD = "";
+    values.forEach(function (v, i) { lineD += (i ? " L " : "M ") + x(i) + " " + y(v); });
+    svg.appendChild(svgEl("path", { d: lineD, "class": "series-line s-pos", "clip-path": "url(#" + hostId + "-cp-pos)" }));
+    svg.appendChild(svgEl("path", { d: lineD, "class": "series-line s-neg", "clip-path": "url(#" + hostId + "-cp-neg)" }));
+
+    /* endpoint marker + direct label */
+    var last = values[values.length - 1];
+    var endColor = last >= 0 ? "var(--c-pos)" : "var(--c-neg)";
+    var lastY = y(last);
+    svg.appendChild(svgEl("circle", { cx: x(values.length - 1), cy: lastY, r: 4.5, fill: endColor, "class": "dot" }));
+    var labY = lastY < PAD.t + PH * 0.4 ? lastY + 17 : lastY - 11;
+    labY = Math.max(PAD.t + 11, Math.min(PAD.t + PH - 3, labY));
+    var endLab = svgEl("text", {
+      x: W - 3, y: labY, "class": "endlabel", "text-anchor": "end", fill: endColor
+    });
+    endLab.textContent = shortRub(last);
+    svg.appendChild(endLab);
+
+    /* crossing marker */
+    if (opts.crossMonth) {
+      var cx = x(opts.crossMonth - 1);
+      svg.appendChild(svgEl("line", { x1: cx, x2: cx, y1: PAD.t, y2: PAD.t + PH, "class": "cross" }));
+    }
+
+    /* hover layer */
+    var cross = svgEl("line", { x1: 0, x2: 0, y1: PAD.t, y2: PAD.t + PH, "class": "cross", opacity: 0 });
+    var hoverDot = svgEl("circle", { r: 5, "class": "dot", opacity: 0, fill: "var(--c-pos)" });
+    svg.appendChild(cross); svg.appendChild(hoverDot);
+    var overlay = svgEl("rect", { x: PAD.l, y: PAD.t, width: PW, height: PH, fill: "transparent", style: "cursor:crosshair" });
+    svg.appendChild(overlay);
+
+    function move(ev) {
+      var rect = svg.getBoundingClientRect();
+      var px = ((ev.clientX - rect.left) / rect.width) * W;
+      var i = Math.round(((px - PAD.l) / PW) * (MONTHS - 1));
+      i = Math.max(0, Math.min(MONTHS - 1, i));
+      var v = values[i];
+      cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("opacity", 1);
+      hoverDot.setAttribute("cx", x(i)); hoverDot.setAttribute("cy", y(v));
+      hoverDot.setAttribute("fill", v >= 0 ? "var(--c-pos)" : "var(--c-neg)");
+      hoverDot.setAttribute("opacity", 1);
+      tip.innerHTML = "Месяц " + (i + 1) + "<br><b>" + rub(v) + "</b>" + (opts.extra ? "<br>" + opts.extra(i) : "");
+      tip.style.opacity = 1;
+      var left = (x(i) / W) * rect.width;
+      tip.style.left = Math.max(6, Math.min(rect.width - 150, left + 12)) + "px";
+      tip.style.top = ((y(v) / H) * rect.height - 10) + "px";
+    }
+    function leave() {
+      cross.setAttribute("opacity", 0);
+      hoverDot.setAttribute("opacity", 0);
+      tip.style.opacity = 0;
+    }
+    overlay.addEventListener("pointermove", move);
+    overlay.addEventListener("pointerdown", move);
+    overlay.addEventListener("pointerleave", leave);
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    FIELDS.forEach(function (f) {
+      var input = document.getElementById("f-" + f.id);
+      if (parseFloat(input.value) !== state[f.id]) input.value = state[f.id];
+      document.getElementById("v-" + f.id).textContent = fmtField(f, state[f.id]);
+    });
+
+    var m = compute(state);
+
+    var monthTxt = function (v) { return v ? v + " " + plural(v, "месяц", "месяца", "месяцев") : "не в 24 мес"; };
+    var stats = [
+      { v: group(m.cust12), k: "платящих к 12-му месяцу", cls: "blue" },
+      { v: shortRub(m.mrr12) + " ₽", k: "MRR на 12-м месяце", cls: "blue" },
+      { v: shortRub(m.mrr24 * 12) + " ₽", k: "годовая выручка на выходе из 24-го месяца", cls: "" },
+      { v: shortRub(m.trough) + " ₽", k: "пик кассового разрыва, месяц " + m.troughM, cls: "red" },
+      { v: monthTxt(m.cashBack), k: "возврат кэш-вложений", cls: m.cashBack && m.cashBack <= 18 ? "green" : "red" },
+      { v: monthTxt(m.fullBack), k: "возврат кэша и вашего труда (" + shortRub(m.labor) + " ₽)", cls: m.fullBack ? "" : "red" },
+      { v: (Math.round(m.ltvCac * 10) / 10).toString().replace(".", ",") + "×", k: "LTV / CAC — норма от 3", cls: m.ltvCac >= 3 ? "green" : "red" },
+      { v: shortRub(m.ltv) + " ₽", k: "LTV клиента", cls: "" },
+      { v: (Math.round(m.cacPayback * 10) / 10).toString().replace(".", ",") + " мес", k: "возврат CAC с одного клиента", cls: "" },
+      { v: shortRub(m.mktTotal) + " ₽", k: "маркетинговый бюджет за 24 месяца", cls: "" }
+    ];
+    document.getElementById("stats").innerHTML = stats.map(function (s) {
+      return '<div class="stat ' + s.cls + '"><span class="v">' + nbsp(s.v) + '</span><span class="k">' + s.k + "</span></div>";
+    }).join("");
+
+    var cum = m.rows.map(function (r) { return r.cum; });
+    var mrr = m.rows.map(function (r) { return r.mrr; });
+    drawChart("chart-cash", cum, {
+      crossMonth: m.cashBack,
+      extra: function (i) { return "клиентов: " + m.rows[i].cust + ", поток: " + rub(m.rows[i].cf); }
+    });
+    drawChart("chart-mrr", mrr, {
+      zeroBase: true,
+      extra: function (i) { return "клиентов: " + m.rows[i].cust + ", новых: " + m.rows[i].newC; }
+    });
+
+    var tb = document.querySelector("#model-table tbody");
+    tb.innerHTML = m.rows.map(function (r) {
+      var isMark = (r.t === m.cashBack) || (r.t === 12) || (r.t === 24);
+      return '<tr class="' + (isMark ? "mark" : "") + '">' +
+        "<th>" + r.t + "</th>" +
+        '<td class="n">' + r.newC + "</td>" +
+        '<td class="n">' + r.churned + "</td>" +
+        '<td class="n">' + r.cust + "</td>" +
+        '<td class="n">' + group(r.mrr) + "</td>" +
+        '<td class="n">' + group(r.gross) + "</td>" +
+        '<td class="n">' + group(r.mkt) + "</td>" +
+        '<td class="n ' + (r.cf < 0 ? "neg" : "") + '">' + group(r.cf) + "</td>" +
+        '<td class="n ' + (r.cum < 0 ? "neg" : "") + '">' + group(r.cum) + "</td>" +
+        "</tr>";
+    }).join("");
+  }
+
+  markPreset(detectPreset());
+  render();
+  window.addEventListener("resize", function () { render(); });
+})();
+</script>

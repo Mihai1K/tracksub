@@ -1,0 +1,655 @@
+<title>Атрибуция в MAX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+  :root {
+    --ground: #EDF0F3;
+    --surface: #FFFFFF;
+    --surface-2: #F4F7F9;
+    --ink: #14181D;
+    --ink-2: #454E59;
+    --ink-3: #6C7681;
+    --line: #D7DDE3;
+    --line-2: #BAC3CC;
+    --signal: #B03A22;
+    --signal-soft: #F7E8E3;
+    --data: #2B5A86;
+    --data-soft: #E3EDF5;
+    --go: #1E6A4C;
+    --go-soft: #E0EFE8;
+    --warn: #8E6108;
+    --warn-soft: #F6EEDC;
+
+    --f-display: "PT Serif", Georgia, "Times New Roman", serif;
+    --f-body: "Golos Text", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1317;
+      --surface: #161B21;
+      --surface-2: #1B222A;
+      --ink: #E7ECF1;
+      --ink-2: #AFB9C4;
+      --ink-3: #808B98;
+      --line: #262F38;
+      --line-2: #3A4550;
+      --signal: #E4795F;
+      --signal-soft: #2E1D18;
+      --data: #83AED7;
+      --data-soft: #16222D;
+      --go: #5FB893;
+      --go-soft: #122720;
+      --warn: #D6A44A;
+      --warn-soft: #251E10;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0F1317;
+    --surface: #161B21;
+    --surface-2: #1B222A;
+    --ink: #E7ECF1;
+    --ink-2: #AFB9C4;
+    --ink-3: #808B98;
+    --line: #262F38;
+    --line-2: #3A4550;
+    --signal: #E4795F;
+    --signal-soft: #2E1D18;
+    --data: #83AED7;
+    --data-soft: #16222D;
+    --go: #5FB893;
+    --go-soft: #122720;
+    --warn: #D6A44A;
+    --warn-soft: #251E10;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .doc {
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(20px, 1fr)
+      [wide-start] minmax(0, 160px)
+      [content-start] minmax(0, 720px) [content-end]
+      minmax(0, 160px) [wide-end]
+      minmax(20px, 1fr) [full-end];
+    padding: 0 0 96px;
+  }
+  .doc > * { grid-column: content; }
+  .doc > .wide { grid-column: wide; }
+
+  h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+  h1 {
+    font-size: clamp(2.1rem, 5.4vw, 3.35rem);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    margin: 10px 0 18px;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.2vw, 1.95rem);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    margin: 8px 0 14px;
+  }
+  h3 {
+    font-family: var(--f-body);
+    font-size: 1.02rem;
+    font-weight: 600;
+    margin: 26px 0 8px;
+  }
+  p { margin: 0 0 16px; }
+  a { color: var(--data); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--data); outline-offset: 3px; border-radius: 2px; }
+  strong { font-weight: 600; }
+
+  .kicker {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+  .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+  section { margin-top: 58px; }
+  section > p, section > ul, section > ol, section > .note, section > .callout { max-width: 68ch; }
+
+  ul, ol { margin: 0 0 16px; padding-left: 1.15em; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--ink-3); }
+
+  header.masthead { padding: 68px 0 8px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go);
+    background: var(--go-soft);
+    border: 1px solid color-mix(in srgb, var(--go) 26%, transparent);
+    padding: 5px 11px;
+    border-radius: 2px;
+  }
+  .dek { font-size: 1.16rem; line-height: 1.55; color: var(--ink-2); max-width: 60ch; margin-bottom: 26px; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 26px;
+    font-family: var(--f-mono); font-size: 0.76rem; color: var(--ink-3); padding-bottom: 26px;
+  }
+
+  .verdict {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 34px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .verdict > div { background: var(--surface); padding: 22px 22px 24px; }
+  .verdict .label {
+    font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .verdict .v-go .label { color: var(--go); }
+  .verdict .v-mid .label { color: var(--warn); }
+  .verdict .v-no .label { color: var(--signal); }
+  .verdict p { font-size: 0.97rem; line-height: 1.5; margin: 0; color: var(--ink-2); }
+  .verdict p strong { color: var(--ink); }
+
+  .callout {
+    border-left: 3px solid var(--data);
+    background: var(--surface);
+    padding: 18px 20px;
+    margin: 24px 0;
+    border-radius: 0 3px 3px 0;
+  }
+  .callout.risk { border-left-color: var(--signal); }
+  .callout.good { border-left-color: var(--go); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label {
+    font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 7px;
+  }
+
+  .note { font-size: 0.88rem; color: var(--ink-3); line-height: 1.5; }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin: 22px 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  caption {
+    caption-side: top; text-align: left;
+    font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-3); padding: 14px 16px 0;
+  }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--f-mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
+    border-bottom: 1px solid var(--line-2);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody th { font-weight: 600; font-size: 0.92rem; }
+  tr.total td, tr.total th { background: var(--surface-2); font-weight: 600; }
+  .tag {
+    display: inline-block; font-family: var(--f-mono); font-size: 0.66rem;
+    letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px;
+    border-radius: 2px; white-space: nowrap;
+  }
+  .tag.red { color: var(--signal); background: var(--signal-soft); }
+  .tag.green { color: var(--go); background: var(--go-soft); }
+  .tag.blue { color: var(--data); background: var(--data-soft); }
+  .tag.amber { color: var(--warn); background: var(--warn-soft); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    margin: 26px 0;
+    overflow: hidden;
+  }
+  .stat { background: var(--surface); padding: 18px 18px 20px; }
+  .stat .v {
+    font-family: var(--f-mono); font-variant-numeric: tabular-nums;
+    font-size: 1.55rem; font-weight: 700; letter-spacing: -0.02em;
+    display: block; line-height: 1.1;
+  }
+  .stat .k { font-size: 0.82rem; color: var(--ink-3); line-height: 1.4; display: block; margin-top: 7px; }
+  .stat.red .v { color: var(--signal); }
+  .stat.blue .v { color: var(--data); }
+  .stat.green .v { color: var(--go); }
+
+  /* funnel */
+  .funnel { margin: 24px 0 8px; display: grid; gap: 6px; }
+  .fn-row {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 46%);
+    gap: 16px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 12px 16px;
+  }
+  .fn-label { font-size: 0.92rem; line-height: 1.4; }
+  .fn-label b { display: block; font-weight: 600; }
+  .fn-label span { color: var(--ink-3); font-size: 0.82rem; }
+  .fn-bar { display: flex; align-items: center; gap: 10px; }
+  .fn-bar .b { height: 9px; border-radius: 1px; background: var(--data); }
+  .fn-bar .v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 500; white-space: nowrap; }
+  .fn-row.is-target { border-color: color-mix(in srgb, var(--go) 45%, var(--line)); background: var(--go-soft); }
+  .fn-row.is-target .b { background: var(--go); }
+  @media (max-width: 620px) {
+    .fn-row { grid-template-columns: 1fr; gap: 8px; }
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 24px 0;
+  }
+  .split > div { background: var(--surface); padding: 20px 22px 22px; }
+  .split h4 {
+    font-family: var(--f-body); font-size: 0.97rem; font-weight: 600; margin: 0 0 10px;
+  }
+  .split p { font-size: 0.92rem; line-height: 1.5; color: var(--ink-2); }
+  .split p:last-child { margin-bottom: 0; }
+  .split code, code {
+    font-family: var(--f-mono); font-size: 0.85em;
+    background: var(--surface-2); padding: 1px 5px; border-radius: 2px;
+    border: 1px solid var(--line);
+  }
+
+  details { border-top: 1px solid var(--line); padding: 14px 0; }
+  summary { cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+  details[open] summary { margin-bottom: 10px; }
+
+  footer.sources {
+    margin-top: 64px; padding-top: 26px; border-top: 1px solid var(--line);
+    font-size: 0.85rem; color: var(--ink-3);
+  }
+  footer.sources ul { columns: 2; column-gap: 34px; padding-left: 1.1em; }
+  footer.sources li { break-inside: avoid; margin-bottom: 6px; }
+  @media (max-width: 620px) { footer.sources ul { columns: 1; } }
+
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 54px 0 0; }
+</style>
+
+<div class="doc">
+
+  <header class="masthead">
+    <p class="eyebrow">Разбор площадки · часть 2 · сентябрь 2026</p>
+    <h1>Атрибуция в MAX</h1>
+    <p class="dek">Если Telegram-трекер строить поздно, то что с MAX? Ниже — площадка в цифрах, реальный размер рекламного рынка, кто уже занял места, и главное: есть ли там та самая дыра, за которую платят 1 500 ₽ в месяц.</p>
+    <div class="meta">
+      <span>Продолжение разбора предложения</span>
+      <span>Данные на 02.09.2026</span>
+      <span>Вопрос: есть ли спрос на атрибуцию</span>
+    </div>
+  </header>
+
+  <div class="verdict">
+    <div class="v-go">
+      <p class="label">Дыра есть</p>
+      <p>Сегодня эффективность рекламы в MAX меряют так: считают клики по кнопке и <em>глазами сверяют прирост подписчиков</em> в статистике канала за тот же период. Своей статистики источников у MAX нет — её запустили 19 августа 2026 без разбивки по источникам. Ссылка-приглашение у канала одна, статистики по ней нет.</p>
+    </div>
+    <div class="v-mid">
+      <p class="label">Но рынок маленький</p>
+      <p>Вся реклама в MAX за первое полугодие 2026 — <strong>1 млрд ₽</strong> по данным РКН, прогноз на год 2–2,5 млрд. Аналитический слой поверх такого рынка — это десятки миллионов в год на всех, а не сотни. Растёт быстро, но стартует почти с нуля.</p>
+    </div>
+    <div class="v-no">
+      <p class="label">И окно узкое</p>
+      <p>Собственный рекламный кабинет MAX обещан <strong>к концу 2026 года</strong>, у VK Рекламы оптимизация по подпискам уже «в планах». Когда площадка закроет дыру сама, останется только то, что она делать не станет: сквозной отчёт по всем источникам и выгрузка конверсий наружу.</p>
+    </div>
+  </div>
+
+  <section>
+    <p class="kicker">Площадка</p>
+    <h2>MAX в цифрах</h2>
+    <div class="stats">
+      <div class="stat blue"><span class="v">130 млн</span><span class="k">пользователей всего, август 2026</span></div>
+      <div class="stat"><span class="v">85 млн</span><span class="k">DAU на май 2026 — с нуля за год</span></div>
+      <div class="stat green"><span class="v">86,2 млн</span><span class="k">MAU в июне: впервые обогнал Telegram (75,7 млн) и стал №1 среди мессенджеров</span></div>
+      <div class="stat"><span class="v">11,5 млн</span><span class="k">каналов, публичных и приватных, август 2026</span></div>
+      <div class="stat"><span class="v">480 млн</span><span class="k">подписок суммарно</span></div>
+      <div class="stat"><span class="v">226 тыс.</span><span class="k">публичных каналов в каталоге MXStat, +246 в день</span></div>
+    </div>
+    <p>Рост во многом обеспечен предустановкой на смартфоны и госсервисами, а не любовью аудитории — это важно помнить. Но для рекламодателя разница невелика: люди там есть, внимание там есть, баннерная слепота ниже. С февраля 2026 каналы может создавать любой пользователь, а не только блогер с 10 тыс. подписчиков на другой площадке. С сентября 2026 через MAX можно официально оформлять трудовые отношения — в мессенджер заходят корпорации.</p>
+    <p class="note">Отрезвляющая деталь: в каналы MAX перешло, по оценке инфлюенс-агентств, лишь 10–15% аудитории блогеров из Telegram. 11,5 млн каналов — это в основном личные и приватные; коммерчески значимых, попадающих в каталоги, — около четверти миллиона.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Деньги</p>
+    <h2>Рекламный рынок: маленький, но с крутой производной</h2>
+    <div class="table-wrap">
+      <table>
+        <caption>Объём и динамика</caption>
+        <thead><tr><th>Показатель</th><th class="n">Значение</th><th>Источник</th></tr></thead>
+        <tbody>
+          <tr><td>Реклама в MAX, 1-е полугодие 2026</td><td class="n">1 млрд ₽</td><td>Роскомнадзор</td></tr>
+          <tr><td>Прогноз на весь 2026 год</td><td class="n">2–2,5 млрд ₽</td><td>Telega.in + АРИР</td></tr>
+          <tr><td>Оптимистичный сценарий</td><td class="n">3–5 млрд ₽</td><td>Telega.in + АРИР</td></tr>
+          <tr><td>Прогноз на 12 месяцев вперёд</td><td class="n">2,5–3,7 млрд ₽</td><td>SocialJet</td></tr>
+          <tr><td>Доля в российском инфлюенс-рынке</td><td class="n">3–4%</td><td>оценка АРИР</td></tr>
+          <tr><td>Рост числа рекламодателей, янв–май 2026</td><td class="n">×7,5 … ×18</td><td>eLama, АБА</td></tr>
+          <tr><td>Рост рекламных бюджетов, янв–май 2026</td><td class="n">×37</td><td>eLama</td></tr>
+          <tr><td>Рост среднего чека размещения</td><td class="n">×4,7</td><td>eLama</td></tr>
+          <tr><td>Доля маркированной рекламы в контенте</td><td class="n">0,8% → 5,35%</td><td>Brand Analytics, янв→май</td></tr>
+          <tr><td>Средняя стоимость размещения, янв→апр</td><td class="n">6 750 → 5 115 ₽ (−24,2%)</td><td>отраслевые данные</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Для сравнения: рынок рекламы в Telegram даже в кризисном 2026-м — <span class="num">7,9 млрд ₽</span> зарегистрированных размещений только за полугодие. То есть MAX сегодня примерно <strong>в 8 раз меньше</strong> умирающего Telegram. Но у одного производная минус двадцать процентов, у другого — плюс несколько сотен.</p>
+
+    <h3>Кто там покупает</h3>
+    <p>Структура расходов узкая и это риск: онлайн-образование — 33,4%, блогеры, продвигающие свои проекты — 25,5%, недвижимость — 11,8%. Почти 60% денег приносят две категории, причём вторая — это не бизнес с бюджетом, а автор, который льёт на себя.</p>
+
+    <h3>Сколько стоит подписчик</h3>
+    <div class="wide table-wrap">
+      <table>
+        <caption>Ориентиры CPF, 2026</caption>
+        <thead><tr><th>Сегмент / канал закупки</th><th class="n">MAX</th><th class="n">Telegram</th><th>Комментарий</th></tr></thead>
+        <tbody>
+          <tr><td>Средний CPF по рынку</td><td class="n">130–190 ₽</td><td class="n">180–250 ₽</td><td>оценка SocialJet</td></tr>
+          <tr><td>Посевы в каналах MAX</td><td class="n">50–70 ₽</td><td class="n">—</td><td>дешевле Telegram примерно вдвое</td></tr>
+          <tr><td>VK Ads → канал</td><td class="n">50–90 ₽</td><td class="n">—</td><td></td></tr>
+          <tr><td>Яндекс Директ → канал</td><td class="n">60–120 ₽</td><td class="n">—</td><td></td></tr>
+          <tr><td>Региональные медиа</td><td class="n">8–29 ₽</td><td class="n">—</td><td>самый дешёвый сегмент</td></tr>
+          <tr><td>Новостные и авторские</td><td class="n">35–50 ₽</td><td class="n">—</td><td></td></tr>
+          <tr><td>B2B и IT</td><td class="n">100–140 ₽</td><td class="n">—</td><td></td></tr>
+          <tr><td>Финтех и банки</td><td class="n">150–250 ₽</td><td class="n">—</td><td>самый дорогой сегмент</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="label">Что это значит для продукта</span>
+      <p>Дешёвый подписчик — плохая новость для продавца аналитики. Владельцу канала, который берёт подписчика по 30 ₽, экономия 20% на трафике не окупает 1 500 ₽/мес подписки, пока он не льёт хотя бы на 30–50 тыс. ₽ в месяц. Ваш реальный клиент — не «владелец канала», а <strong>тот, кто тратит от 50 тыс. ₽ в месяц</strong> или ведёт чужие бюджеты. Это сильно сужает воронку, зато повышает готовность платить и снижает отток.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Как устроена закупка</p>
+    <h2>Четыре двери в MAX — и ни одной с измерением</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Канал</th><th>Как работает</th><th>Что с измерением</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Посевы в каналах</strong></td>
+            <td>Прямые сделки и биржи (Telega.in, MXStat, каталоги). Основной формат сегодня.</td>
+            <td><span class="tag red">никак</span> Отчёт от владельца канала плюс прирост в статистике.</td>
+          </tr>
+          <tr>
+            <td><strong>Яндекс Директ, нативные посты в каналах MAX</strong></td>
+            <td>С мая 2026. Пост в каналах РСЯ: до 820 знаков, картинки, видео, карточки товаров; удаляется через 48 часов. Минимум 30 ₽ за клик и 300 ₽ в день. Каналы от 1 000 подписчиков.</td>
+            <td><span class="tag amber">частично</span> Цель — клик по кнопке. Подписка алгоритму не видна.</td>
+          </tr>
+          <tr>
+            <td><strong>VK Реклама</strong></td>
+            <td>Единый рекламный объект для каналов ВКонтакте, MAX и Дзена. Таргет по полу, возрасту, гео, интересам, конкурентам, ключевым словам.</td>
+            <td><span class="tag amber">только клики</span> Оптимизация по подпискам заявлена в планах, но пока недоступна.</td>
+          </tr>
+          <tr>
+            <td><strong>Внешний трафик</strong></td>
+            <td>Директ (поиск и РСЯ), Avito, сайты — на канал напрямую, на страницу-прокладку или в бота.</td>
+            <td><span class="tag red">никак</span> Клик виден, подписка — нет.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout risk">
+      <span class="label">Как это меряют прямо сейчас — цитата из отраслевого гайда</span>
+      <p>«Рабочая схема состоит из двух измерений: первое — цель на клик по кнопке перехода, второе — прирост подписчиков в статистике канала за тот же период». Разрыв между кликами и приростом есть всегда; считается нормой, если он хотя бы стабилен.</p>
+      <p>Вот это и есть рынок, на который вы заходите. Люди сводят рекламу в MAX <strong>вычитанием чисел из двух разных интерфейсов</strong>.</p>
+    </div>
+    <p>Собственная статистика каналов появилась в MAX только 19 августа 2026 и показывает динамику подписчиков, просмотры и долю включивших уведомления за период от недели до трёх месяцев. Источников переходов в ней нет. Ссылка-приглашение у канала одна: при обновлении старая перестаёт работать, статистики по ней не предусмотрено. То есть механика TGTrack — «уникальная ссылка на каждый источник» — в MAX <strong>не воспроизводится в принципе</strong>.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Техника</p>
+    <h2>Две схемы атрибуции — и почему это защищаемо</h2>
+    <p>Раз уникальных ссылок нет, остаются два пути. Хороший продукт делает оба и сверяет их между собой.</p>
+    <div class="split">
+      <div>
+        <h4>А. Через бота-прокладку — точно</h4>
+        <p>MAX поддерживает диплинки вида <code>max.ru/YourBot?start=payload</code>: до 128 символов, только <code>A-Za-z0-9_-</code>. При переходе бот получает событие <code>bot_started</code> с этим payload.</p>
+        <p>Дальше: кладём в payload идентификатор клика → бот показывает кнопку на канал → бот стоит в канале админом и ловит <code>user_added</code> → сопоставляем по одному и тому же user_id.</p>
+        <p><strong>Атрибуция детерминированная</strong>, в отличие от Telegram, где приходится угадывать по времени. Цена — лишний шаг в воронке, минус 20–50% конверсии.</p>
+      </div>
+      <div>
+        <h4>Б. Прямая ссылка — вероятностно</h4>
+        <p>Трекинговый редирект ведёт сразу в канал. Подписка приходит событием <code>user_added</code>, но без указания, по какой ссылке человек пришёл.</p>
+        <p>Значит — сопоставление по временному окну между кликом и вступлением, со всеми оговорками: плотный поток, отложенные подписки, повторные заходы.</p>
+        <p><strong>Конверсия не страдает, точность — да.</strong> Здесь и живёт вся инженерия, которую нельзя скопировать за выходные.</p>
+      </div>
+    </div>
+    <h3>Ограничения платформы, которые надо заложить сразу</h3>
+    <ul>
+      <li>Разработчиком может быть <strong>только верифицированный ИП или юрлицо — резидент РФ</strong>. Лимит — 5 ботов на организацию. Это барьер входа и одновременно вопрос «на кого оформлен аккаунт» в партнёрстве.</li>
+      <li>Вебхук только на 443, только с CA-сертификатом, плюс сертификат Минцифры в доверенных; отключение при недоступности 8 часов. Long polling — не для продакшена.</li>
+      <li>API молодой и меняется: <code>GET /chats</code> отключили в июне 2026, домен переехал на <code>platform-api2.max.ru</code>. Закладывайте постоянную поддержку под изменения.</li>
+      <li>Обратная сторона: <code>user_added</code> и <code>user_removed</code> дают подписки и отписки в реальном времени, а <code>bot_started</code> с payload — точный вход. Инструментов достаточно, чтобы сделать продукт лучше, чем то, что есть на рынке.</li>
+    </ul>
+    <p class="note">Один пункт проверьте руками в первый же день: поведение единственной ссылки-приглашения и то, как выглядит переход из рекламы в закрытый канал. Это описано вторичными источниками, а не документацией, и от ответа зависит вся схема Б.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Конкуренция</p>
+    <h2>Кто уже стоит в дверях</h2>
+    <div class="wide table-wrap">
+      <table>
+        <caption>Игроки в MAX, сентябрь 2026</caption>
+        <thead><tr><th>Кто</th><th>Что делает в MAX</th><th class="n">Цена</th><th>Насколько опасен</th></tr></thead>
+        <tbody>
+          <tr>
+            <th>Botica</th>
+            <td>UTM-конструктор ссылок (100 / 2000 / ∞), лендинги, отчёт «подписки–отписки», когорты и удержание, шаблоны мини-аппов, выгрузки, открытое API, Битрикс24</td>
+            <td class="n">0 / 1 990 / 3 990</td>
+            <td><span class="tag red">главный</span> ООО, 2000+ каналов, официальный партнёр MAX. Ближе всех к вашему продукту. Чего у них нет: передачи конверсий в Директ и VK — интеграция с Директом числится «скоро».</td>
+          </tr>
+          <tr>
+            <th>SocialLead<br><span class="note">группа SocialJet</span></th>
+            <td>Бот-мониторинг роста канала, окна удержания 24 ч / 48 ч / 7 д / 30 д, быстрые отписки, безлимитные трекинговые ссылки, экспорт PDF и Excel</td>
+            <td class="n">0 / 990</td>
+            <td><span class="tag red">высоко</span> За спиной крупная инфлюенс-платформа с доступом к рекламодателям. Продают аналитику как бесплатное приложение к закупке трафика — с этим сложно конкурировать ценой.</td>
+          </tr>
+          <tr>
+            <th>TGTrack</th>
+            <td>Тот же бот «Откуда подписки», перенесённый в MAX в марте 2026</td>
+            <td class="n">0 / 1 490–1 990</td>
+            <td><span class="tag amber">средне</span> Один человек, но с готовым движком атрибуции и интеграциями с рекламными системами — единственным, чего нет у Botica.</td>
+          </tr>
+          <tr>
+            <th>Botman Радар</th>
+            <td>Пока только боты MAX; каналы и чаты заявлены как «скоро»</td>
+            <td class="n">0 / от 700</td>
+            <td><span class="tag amber">средне</span> Раздаёт аналитику бесплатно, берёт только за отправку конверсий. Как только докрутит каналы MAX — станет главной ценовой проблемой.</td>
+          </tr>
+          <tr>
+            <th>Mobzio</th>
+            <td>Диплинки и мультиссылки для MAX, атрибуция через сценарии бота</td>
+            <td class="n">триал 3 дня</td>
+            <td><span class="tag blue">низко</span> Уже занимает поисковую выдачу по теме «как отследить подписки в MAX».</td>
+          </tr>
+          <tr>
+            <th>MXStat, MaxDash, LiveDune, MHUB</th>
+            <td>Внешние каталоги и статистика каналов: подписчики, охваты, ERR, рекламная нагрузка</td>
+            <td class="n">разное</td>
+            <td><span class="tag blue">не конкурент</span> Видят только внешние счётчики, источники подписок не отслеживают. Скорее партнёры и канал дистрибуции.</td>
+          </tr>
+          <tr>
+            <th>Getblogger, Telega.in, SocialJet, агентства</th>
+            <td>Закупка и автоматизация размещений</td>
+            <td class="n">комиссия</td>
+            <td><span class="tag blue">канал сбыта</span> Им нужна ваша отчётность для клиентов. Самый быстрый путь к первым деньгам — через них, а не мимо них.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout good">
+      <span class="label">Где реально свободно</span>
+      <p>Никто в MAX сегодня не закрывает связку целиком: <strong>клик → подписка → офлайн-конверсия обратно в Яндекс Директ и VK Ads → отчёт по стоимости живого подписчика по всем источникам сразу</strong>. У Botica нет выгрузки конверсий, у SocialLead — своей закупочной оптики, у Botman — каналов MAX, у TGTrack — рук. Это узкая, но настоящая щель.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Спрос</p>
+    <h2>Сколько здесь платящих — снизу вверх</h2>
+    <p>Считаю от каналов к деньгам. Каждая ступень — допущение, которое можно проверить за две недели обзвоном.</p>
+    <div class="wide funnel">
+      <div class="fn-row">
+        <div class="fn-label"><b>Все каналы в MAX</b><span>публичные и приватные, август 2026</span></div>
+        <div class="fn-bar"><span class="b" style="width:100%"></span><span class="v">11,5 млн</span></div>
+      </div>
+      <div class="fn-row">
+        <div class="fn-label"><b>Публичные, попадающие в каталоги</b><span>то есть коммерчески заметные</span></div>
+        <div class="fn-bar"><span class="b" style="width:36%"></span><span class="v">226 тыс.</span></div>
+      </div>
+      <div class="fn-row">
+        <div class="fn-label"><b>Ведут платное продвижение хоть иногда</b><span>оценка 8–12% каталога</span></div>
+        <div class="fn-bar"><span class="b" style="width:22%"></span><span class="v">18–27 тыс.</span></div>
+      </div>
+      <div class="fn-row">
+        <div class="fn-label"><b>Тратят от 50 тыс. ₽/мес — то есть аналитика окупается</b><span>оценка 15–20% от предыдущих</span></div>
+        <div class="fn-bar"><span class="b" style="width:13%"></span><span class="v">3–5 тыс.</span></div>
+      </div>
+      <div class="fn-row is-target">
+        <div class="fn-label"><b>Ваша доля через 24 месяца</b><span>10–18% этого пула плюс агентские аккаунты</span></div>
+        <div class="fn-bar"><span class="b" style="width:7%"></span><span class="v">300–900</span></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat green"><span class="v">450–1 350 тыс. ₽</span><span class="k">MRR через 24 месяца при ARPU 1 500 ₽ — верхняя часть диапазона требует агентского тарифа</span></div>
+      <div class="stat blue"><span class="v">~40–120 млн ₽</span><span class="k">годовой потолок всей ниши аналитики MAX при рынке рекламы 3–5 млрд ₽</span></div>
+      <div class="stat"><span class="v">×2–3</span><span class="k">во столько раз этот пул больше, чем ниша Telegram-трекеров сегодня — но он ещё не сформирован</span></div>
+    </div>
+    <p class="note">Это модель, а не измерение. Самое хрупкое допущение — третья ступень: доля каналов, которые вообще покупают трафик. Проверяется выгрузкой каталога MXStat с фильтром по рекламной нагрузке за 15 минут.</p>
+
+    <h3>Второй сегмент, который считать отдельно</h3>
+    <p>Агентства и таргетологи. Их немного — сотни, — но один агентский аккаунт ведёт 10–40 каналов, платит 8–15 тыс. ₽ и уходит вдвое реже частника. При 40–60 агентских клиентах это <span class="num">400–700 тыс. ₽</span> MRR — сопоставимо со всей розницей, но продаётся руками и требует white-label и API. Именно этот сегмент оправдывает продукт при маленьком рынке.</p>
+  </section>
+
+  <section>
+    <p class="kicker">Риски</p>
+    <h2>Что может убить эту затею</h2>
+    <div class="wide table-wrap">
+      <table>
+        <thead><tr><th>Риск</th><th class="n">Вероятность</th><th class="n">Горизонт</th><th>Что делать</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>MAX запускает свой рекламный кабинет</strong> с нативным учётом подписок; VK добавляет оптимизацию по подпискам</td>
+            <td class="n">высокая</td><td class="n">4–9 мес</td>
+            <td>Гендиректор MAX публично обещал рекламные инструменты к концу 2026. Не строить продукт вокруг счётчика подписок: ценность держать в кросс-источниковом отчёте, удержании и выгрузке конверсий во <em>внешние</em> системы, которые MAX обслуживать не станет.</td>
+          </tr>
+          <tr>
+            <td><strong>Botica или Botman добавляют офлайн-конверсии</strong></td>
+            <td class="n">высокая</td><td class="n">3–6 мес</td>
+            <td>Это единственное, чего им не хватает. Значит, скорость выхода важнее полноты: либо вы там за 6 недель, либо не идёте вообще.</td>
+          </tr>
+          <tr>
+            <td><strong>Рынок не дорастает</strong>: 2–2,5 млрд остаются 2–2,5 млрд</td>
+            <td class="n">средняя</td><td class="n">12 мес</td>
+            <td>При таком рынке ниша аналитики — единицы миллионов в год, и проект не окупает 400 часов. Проверяется тестом спроса до кода.</td>
+          </tr>
+          <tr>
+            <td><strong>Узкая база спроса</strong>: 60% бюджетов — онлайн-образование и самопродвижение блогеров</td>
+            <td class="n">средняя</td><td class="n">постоянно</td>
+            <td>Первые 30 клиентов брать именно из инфобиза и агентств — там уже привыкли считать CPA. Не пытаться продавать «всем владельцам каналов».</td>
+          </tr>
+          <tr>
+            <td><strong>Платформенная зависимость</strong>: правила, верификация, лимит 5 ботов, отключение методов API</td>
+            <td class="n">средняя</td><td class="n">постоянно</td>
+            <td>Аккаунт разработчика оформлять на общее юрлицо, а не на одного партнёра. Держать архитектуру мультиплощадочной.</td>
+          </tr>
+          <tr>
+            <td><strong>Telegram возвращают</strong> — блокировку снимают, рынок отыгрывает назад</td>
+            <td class="n">низкая</td><td class="n">6–18 мес</td>
+            <td>Не риск, а опция: мультиплощадочная архитектура превращает это в бесплатный апсайд.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Вывод</p>
+    <h2>Что это значит для решения</h2>
+    <p>Спрос реален и подтверждается тем, как убого сегодня меряют рекламу в MAX. Но рынок в 8 раз меньше телеграмного, а окно до того, как площадка закроет дыру сама, — примерно полгода. Это меняет не ответ «да или нет», а требования к скорости и к формату сделки.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Параметр</th><th>Как надо</th></tr></thead>
+        <tbody>
+          <tr><td>Срок до первого платящего</td><td><strong>8 недель максимум</strong>, включая две недели теста спроса. Дольше — не имеет смысла: конкуренты закроют щель.</td></tr>
+          <tr><td>Что в MVP</td><td>Обе схемы атрибуции, отчёт по источникам с удержанием, офлайн-конверсии в Директ и VK. Всё. Лендинги, мини-аппы, конструкторы — не трогать, у Botica это уже есть и догонять там бессмысленно.</td></tr>
+          <tr><td>Первые клиенты</td><td>Агентства и инфобиз, а не владельцы каналов. Через каталоги MXStat и биржи — они же канал сбыта.</td></tr>
+          <tr><td>Позиционирование</td><td>Не «аналитика MAX» — это место занято. «Сколько стоит живой подписчик и как научить Директ приводить именно таких».</td></tr>
+          <tr><td>Цель на 12 месяцев</td><td>150–300 платящих, 250–500 тыс. ₽ MRR. Не 1,5 млн. Если такая цифра не устраивает — в это не стоит заходить вообще.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout good">
+      <span class="label">Тест спроса — те же 14 дней, но конкретнее</span>
+      <p>Выгрузить из каталога MXStat каналы с ненулевой рекламной нагрузкой в тематиках «Маркетинг», «Курсы и гайды», «Бизнес», «Недвижимость». Написать 30 владельцам и 10 агентствам с одним вопросом: «как вы сейчас считаете, какое размещение привело подписчиков, и сколько стоит живой подписчик через 30 дней?». Предложить сделать это за них бесплатно на их последних кампаниях. Десять человек, готовых заплатить вперёд — идём. Меньше — не идём, и это стоило две недели, а не полгода.</p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <footer class="sources">
+    <p class="kicker">Источники</p>
+    <ul>
+      <li><a href="https://habr.com/ru/news/1061678/">Mediascope: MAX обогнал Telegram по MAU, июнь 2026</a></li>
+      <li><a href="https://www.ixbt.com/news/2026/08/19/429039-nacionalnyi-messendzer-max-raskryl-statistiku-kanalov-avtoram-pokazut-rost-auditorii-i-prosmotry.html">Запуск статистики каналов в MAX, 19.08.2026</a></li>
+      <li><a href="https://www.kommersant.ru/doc/8892316">Коммерсантъ — внутренняя статистика каналов MAX</a></li>
+      <li><a href="https://mxstat.ru/channels">MXStat — каталог 226 тыс. каналов MAX</a></li>
+      <li><a href="https://www.sostav.ru/blogs/288427/86357">Sostav — итоги апреля и обновления мая 2026, CPF по сегментам</a></li>
+      <li><a href="https://blog.socialjet.pro/reklama-v-max-prognoz-2026/">SocialJet — CPF, CPM и прогноз рынка MAX</a></li>
+      <li><a href="https://www.ixbt.com/news/2026/06/26/messendzher-max-stremitelno-rastet-chislo-reklamodatelej-uvelichilos-v-18-raz.html">Рост числа рекламодателей и бюджетов в MAX</a></li>
+      <li><a href="https://blog.click.ru/market-news/rkn-soobshhil-ob-obeme-reklamy-v-max/">РКН об объёме рекламы в MAX — 1 млрд ₽ за 1П2026</a></li>
+      <li><a href="https://www.kommersant.ru/doc/8624490">Прогноз Telega.in и АРИР на 2026 год</a></li>
+      <li><a href="https://elama.ru/blog/reklama-v-max-cherez-yandex-direct/">eLama — форматы Директа в MAX, лимиты и цены</a></li>
+      <li><a href="https://ads.vk.ru/help/general/network/promo_channel">VK Реклама — продвижение каналов ВКонтакте и MAX</a></li>
+      <li><a href="https://maxofficial.ru/blog/yandeks-direkt-na-kanal-max-svyazki-i-stoimost-podpischika">Директ на канал MAX: связки и как меряют подписки</a></li>
+      <li><a href="https://dev.max.ru/help/deeplinks">MAX для разработчиков — диплинки и start-payload</a></li>
+      <li><a href="https://dev.max.ru/docs-api/objects/Update">MAX Bot API — события user_added / user_removed</a></li>
+      <li><a href="https://botica.pro/tariffs">Botica — тарифы и состав функций</a></li>
+      <li><a href="https://sociallead.pro/">SocialLead — бот аналитики и окна удержания</a></li>
+      <li><a href="https://elama.ru/blog/kak-sdelat-priglasitelnuyu-ssylku-v-messendzhere-max/">eLama — как устроены ссылки-приглашения в MAX</a></li>
+    </ul>
+    <p class="note" style="margin-top:20px">Воронка спроса и оценки доли рынка — модельные расчёты на публичных данных с явно указанными допущениями, а не измеренные величины. Поведение единственной ссылки-приглашения в MAX описано вторичными источниками и требует ручной проверки перед проектированием.</p>
+  </footer>
+
+</div>

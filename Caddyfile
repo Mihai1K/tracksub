@@ -1,0 +1,19 @@
+# Обратный прокси с автоматическим сертификатом Let's Encrypt.
+# Caddy сам получает и продлевает сертификат — отдельная возня с certbot не нужна,
+# а MAX и Telegram принимают вебхук только по HTTPS с валидным сертификатом.
+
+tracksub.ru, www.tracksub.ru {
+	encode zstd gzip
+
+	# Заголовок с реальным адресом клиента: приложение считает по нему хеш IP
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up Host {host}
+	}
+
+	log {
+		output file /var/log/caddy/access.log
+		format json
+	}
+}

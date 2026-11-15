@@ -1,0 +1,76 @@
+# Развёртывание на общем сервере, где уже живут другие проекты.
+#
+# Порты 80/443 занимает единый edge-Caddy — трогать его нельзя, иначе упадут соседние сайты.
+# Поэтому здесь НЕТ проброса портов: контейнер подключается к внешней сети "edge",
+# а маршрут задаётся отдельным блоком в /root/apps/edge/Caddyfile.
+
+name: tracksub
+
+services:
+  app:
+    build: .
+    container_name: tracksub-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/app/data/app.sqlite
+      APP_URL: https://tracksub.ru
+      SECURE_COOKIES: "true"
+      TRUST_PROXY: "true"
+      PORT: "3000"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+    networks:
+      - edge
+    # Сервер общий с другими проектами: ограничиваем аппетит, чтобы наш сбой
+    # не стал их сбоем. Логи ротируются — иначе json-file растёт до заполнения диска.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  backup:
+    build: .
+    container_name: tracksub-backup
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "while true; do
+         node tools/backup.js --db /app/data/app.sqlite --out /app/backups --keep 30;
+         sleep 86400;
+       done"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+    networks:
+      - edge
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    # У этого контейнера нет веб-сервера, проверка здоровья из образа к нему неприменима
+    healthcheck:
+      disable: true
+
+networks:
+  edge:
+    external: true

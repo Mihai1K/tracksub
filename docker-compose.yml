@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/app/data/app.sqlite
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+
+  # Резервная копия раз в сутки. Хранит 14 последних.
+  backup:
+    build: .
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "while true; do
+         node tools/backup.js --db /app/data/app.sqlite --out /app/backups;
+         sleep 86400;
+       done"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups

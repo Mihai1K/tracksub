@@ -1,0 +1,50 @@
+# Боевое развёртывание: приложение + Caddy с автоматическим HTTPS.
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/app/data/app.sqlite
+      APP_URL: https://tracksub.ru
+      SECURE_COOKIES: "true"
+      TRUST_PROXY: "true"
+      PORT: "3000"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./logs:/var/log/caddy
+
+  backup:
+    build: .
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "while true; do
+         node tools/backup.js --db /app/data/app.sqlite --out /app/backups --keep 30;
+         sleep 86400;
+       done"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+
+volumes:
+  caddy_data:
+  caddy_config:

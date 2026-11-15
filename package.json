@@ -1,0 +1,16 @@
+{
+  "name": "max-attribution",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Performance-аналитика рекламы в MAX: атрибуция подписок и обратная передача конверсий",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test tests/*.test.js",
+    "replay": "node tools/replay.js",
+    "backup": "node tools/backup.js",
+    "restore": "node tools/backup.js --help"
+  }
+}
